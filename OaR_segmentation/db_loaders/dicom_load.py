@@ -1,7 +1,6 @@
 import json
 import os
 import random
-from sys import path
 import cv2
 import numpy as np
 from nibabel import load as load_nii
