@@ -1,0 +1,14 @@
+*.pyc
+__pycache__/
+*.pth
+*.nii
+*.dcm
+*.0
+.idea/
+*.hdf5
+.vscode/
+
+
+
+data/checkpoints_stacking/
+data/checkpoints_segmentation/

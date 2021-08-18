@@ -1,0 +1,111 @@
+{
+    "name": "SegTHOR",
+    "description": "Segmentation of THoracic Organs at Risk in CT images",
+    "release": "2019",
+    "image_size": [
+        1,
+        512,
+        512
+    ],
+    "labels": {
+        "0": "Bg",
+        "2": "Heart",
+        "4": "Aorta",
+        "3": "Trachea",
+        "1": "Esophagus"
+    },
+    "colormap": {
+        "0": [
+            75,
+            54,
+            95
+        ],
+        "1": [
+            153,
+            255,
+            102
+        ],
+        "2": [
+            0,
+            128,
+            255
+        ],
+        "3": [
+            255,
+            0,
+            0
+        ],
+        "4": [
+            172,
+            88,
+            193
+        ]
+    },
+    "weights": {
+        "Bg": 100,
+        "Heart": 100,
+        "Esophagus": 100,
+        "Trachea": 100,
+        "Aorta": 100
+    },
+    "CTwindow_level": {
+        "Bg": 40,
+        "Heart": 40,
+        "Esophagus": 40,
+        "Trachea": 40,
+        "Aorta": 40
+    },
+    "CTwindow_width": {
+        "Bg": 350,
+        "Heart": 350,
+        "Esophagus": 350,
+        "Trachea": 350,
+        "Aorta": 350
+    },
+    "numTraining": 32,
+    "numTest": 8,
+    "test": [
+        "Patient_35",
+        "Patient_26",
+        "Patient_03",
+        "Patient_29",
+        "Patient_12",
+        "Patient_18",
+        "Patient_05",
+        "Patient_31"
+    ],
+    "train": [
+        "Patient_13",
+        "Patient_30",
+        "Patient_21",
+        "Patient_22",
+        "Patient_06",
+        "Patient_39",
+        "Patient_28",
+        "Patient_02",
+        "Patient_11",
+        "Patient_38",
+        "Patient_33",
+        "Patient_25",
+        "Patient_23",
+        "Patient_14",
+        "Patient_01",
+        "Patient_36",
+        "Patient_32",
+        "Patient_09",
+        "Patient_37",
+        "Patient_16",
+        "Patient_07",
+        "Patient_15",
+        "Patient_10",
+        "Patient_08",
+        "Patient_27",
+        "Patient_40",
+        "Patient_19",
+        "Patient_34",
+        "Patient_17",
+        "Patient_20",
+        "Patient_04",
+        "Patient_24"
+    ]
+}

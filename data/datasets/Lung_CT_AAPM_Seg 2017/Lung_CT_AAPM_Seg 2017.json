@@ -1,0 +1,83 @@
+{
+  "name": "Lung_CT_AAPM_Seg 2017",
+  "description": "Chest CT from Lung CT AAPM 2017 challeng",
+  "release": "2017",
+  "tensorImageSize": [
+    1,
+    512,
+    512
+  ],
+  "modality": {
+    "0": "CT"
+  },
+  "labels": {
+    "0": "Bg",
+    "1": "RightLung",
+    "2": "LeftLung",
+    "3": "Heart",
+    "4": "Esophagus",
+    "5": "SpinalCord"
+  },
+  "colormap": {
+    "0": [
+      75,
+      54,
+      95
+    ],
+    "1": [
+      153,
+      255,
+      102
+    ],
+    "2": [
+      0,
+      128,
+      255
+    ],
+    "3": [
+      255,
+      0,
+      0
+    ],
+    "4": [
+      172,
+      88,
+      193
+    ],
+    "5": [
+      216,
+      228,
+      111
+    ]
+  },
+  "weights": {},
+  "CTwindow_level": {
+    "coarse": -500,
+    "LeftLung": -500,
+    "RightLung": -500,
+    "Heart": 30,
+    "Esophagus": 85,
+    "Trachea": -440,
+    "SpinalCord": 0
+  },
+  "CTwindow_width": {
+    "coarse": 1800,
+    "LeftLung": 1800,
+    "RightLung": 1800,
+    "Heart": 350,
+    "Esophagus": 324,
+    "Trachea": 1180,
+    "SpinalCord": 600
+  },
+  "numTraining": 50,
+  "numTest": 10,
+  "test": [
+    
+  ],
+  "experiments": 0,
+  "train": [
+   
+  ],
+  "mean": 0,
+  "std": 0
+}

@@ -1,0 +1,139 @@
+{
+    "name": "StructSeg2019_Task3_Thoracic_OAR",
+    "description": "Chest CT from Structseg 2019 challenge",
+    "release": "2019",
+    "image_size": [
+        1,
+        512,
+        512
+    ],
+    "labels": {
+        "0": "Bg",
+        "1": "RightLung",
+        "2": "LeftLung",
+        "3": "Heart",
+        "4": "Trachea",
+        "5": "Esophagus",
+        "6": "SpinalCord"
+    },
+    "colormap": {
+        "0": [
+            75,
+            54,
+            95
+        ],
+        "1": [
+            153,
+            255,
+            102
+        ],
+        "2": [
+            0,
+            128,
+            255
+        ],
+        "3": [
+            255,
+            0,
+            0
+        ],
+        "4": [
+            172,
+            88,
+            193
+        ],
+        "5": [
+            216,
+            228,
+            111
+        ],
+        "6": [
+            255,
+            255,
+            255
+        ]
+    },
+    "weights": {
+        "Bg": 100,
+        "LeftLung": 100,
+        "RightLung": 100,
+        "Heart": 100,
+        "Esophagus": 80,
+        "Trachea": 70,
+        "SpinalCord": 100
+    },
+    "CTwindow_level": {
+        "coarse": -500,
+        "LeftLung": -500,
+        "RightLung": -500,
+        "Heart": 30,
+        "Esophagus": 85,
+        "Trachea": -440,
+        "SpinalCord": 0
+    },
+    "CTwindow_width": {
+        "coarse": 1800,
+        "LeftLung": 1800,
+        "RightLung": 1800,
+        "Heart": 350,
+        "Esophagus": 324,
+        "Trachea": 1180,
+        "SpinalCord": 600
+    },
+    "numTraining": 40,
+    "numTest": 10,
+    "test": [
+        "46",
+        "28",
+        "29",
+        "37",
+        "25",
+        "10",
+        "47",
+        "22",
+        "13",
+        "23"
+    ],
+    "train": [
+        "14",
+        "50",
+        "35",
+        "5",
+        "30",
+        "45",
+        "32",
+        "8",
+        "26",
+        "39",
+        "18",
+        "42",
+        "40",
+        "12",
+        "27",
+        "16",
+        "36",
+        "17",
+        "20",
+        "19",
+        "15",
+        "3",
+        "44",
+        "31",
+        "4",
+        "21",
+        "6",
+        "48",
+        "41",
+        "1",
+        "38",
+        "43",
+        "9",
+        "24",
+        "11",
+        "7",
+        "49",
+        "33",
+        "2",
+        "34"
+    ]
+}
