@@ -1,7 +1,4 @@
-from OaR_segmentation.stacking.stacking_prediction import combine_predictions
-from OaR_segmentation.utilities.data_vis import visualize, visualize_test
 from _warnings import warn
-
 import matplotlib
 from batchgenerators.utilities.file_and_folder_operations import *
 from torch import nn

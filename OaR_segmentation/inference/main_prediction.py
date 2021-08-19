@@ -49,7 +49,7 @@ if __name__ == "__main__":
     mask_threshold = 0.5
     channels = 1
     metrics_list = ['Dice', 'Hausdorff Distance 95', "Avg. Surface Distance"]
-    stacking_mode = "convolutional" #none, argmax, convolutional
+    stacking_mode = "none" #none, argmax, convolutional
     
     # PATHS management
     paths = Paths(db=db_name, platform=platform)
@@ -70,19 +70,19 @@ if __name__ == "__main__":
 
     ######## BEGIN INFERENCE ########
     if stacking_mode == "none":
-        predictor = StandardPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels)
+        predictor = StandardPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels,models_type_list=models_type_list, deeplab_backbone=deeplab_backbone)
        
     elif stacking_mode == "argmax":
-        predictor = StackingArgmaxPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels)
+        predictor = StackingArgmaxPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, models_type_list=models_type_list)
         
     elif stacking_mode == "convolutional":
-        predictor = StackingConvPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels)
+        predictor = StackingConvPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, load_dir_metamodel=load_dir_metamodel, models_type_list=models_type_list)
         
         
     predictor.predict()
-    predictor.compute_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], 
-                              experiment_num=experiment_num, dict_test_info=dict_test_info)
+    predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], 
+                                   experiment_num=experiment_num, dict_test_info=dict_test_info)
         

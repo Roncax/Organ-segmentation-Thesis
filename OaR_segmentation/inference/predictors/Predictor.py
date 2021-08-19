@@ -2,7 +2,7 @@ from abc import abstractmethod
 import json
 import logging
 import h5py
-import tqdm
+from tqdm import tqdm
 import numpy as np
 
 from OaR_segmentation.utilities.build_volume import grayscale2rgb_mask
@@ -29,7 +29,7 @@ class Predictor(object):
         pass
     
         
-    def combine_predictions(self, output_masks):
+    def combine_predictions(self, output_masks, threshold = None):
         """Combine the output masks in one single dimension and threshold it. 
         The returned matrix has value in range (1, shape(output_mask)[0])
 
@@ -38,7 +38,10 @@ class Predictor(object):
 
         Returns:
             (nxn) numpy matrix: A combination of all output mask in the first dimension of the matrix
-        """    
+        """
+        if threshold is not None:
+            self.mask_threshold = threshold
+            
         matrix_shape = np.shape(output_masks[0])
         combination_matrix = np.zeros(shape=matrix_shape)
         
@@ -125,8 +128,8 @@ class Predictor(object):
                         plot_single_result(score=results_dict, type=m, paths=self.paths.dir_plots, exp_num=experiment_num)
 
 
-    # calculate and save all metrics in png
-    def save_results(results, path_json, path_settings, met, labels, experiment_num, test_info):
+    # calculate and save all the metrics
+    def save_results(self, results, path_json, path_settings, met, labels, experiment_num, test_info):
         dict_results = json.load(open(path_json))
         dict_results[experiment_num] = test_info
         dict_results[experiment_num][met] = {}
@@ -134,7 +137,7 @@ class Predictor(object):
         for organ in labels:
             score[labels[organ]] = []
 
-        logging.info(f"\nCalculating {met} now")
+        print(f"\nCalculating {met} now")
         with tqdm(total=len(results.keys()), unit='volume') as pbar:
             for patient in results:
                 for organ in results[patient]:

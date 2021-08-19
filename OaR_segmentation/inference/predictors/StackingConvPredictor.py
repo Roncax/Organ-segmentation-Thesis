@@ -12,18 +12,18 @@ from OaR_segmentation.utilities.data_vis import visualize, visualize_test
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class StackingConvPredictor(Predictor):
-    def __init__(self):
-        super(StackingConvPredictor, self).__init__()
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes):
+        super(StackingConvPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
         self.nets = None
         self.meta_net = None
         self.channels = None
         
         
     def initialize(self, load_dir_metamodel, channels, load_models_dir, models_type_list):
-        super(StackingConvPredictor, self).initialize(self, load_dir_metamodel, channels, load_models_dir, models_type_list)
+        super(StackingConvPredictor, self).initialize()
         self.channels = channels
         self.nets = self.initialize_multinets(load_models_dir=load_models_dir, models_type_list= models_type_list)
-        self.meta_net = self.initialize_metamodel(load_dir_metamodel)
+        self.meta_net = self.initialize_metamodel(load_dir_metamodel, self.n_classes)
     
     
     def initialize_metamodel(self, load_dir_metamodel, n_classes):
@@ -37,12 +37,12 @@ class StackingConvPredictor(Predictor):
         for label in self.labels.keys():
             self.paths.set_pretrained_model(load_models_dir[label])
 
-            nets[label] = self.build_net(model=models_type_list[label], n_classes=1, 
+            nets[label] = build_net(model=models_type_list[label], n_classes=1, 
                                          channels=self.channels, load_inference=True, 
                                          load_dir=self.paths.dir_pretrained_model)
         return nets
     
-        
+
     def predict(self):
         super(StackingConvPredictor, self).predict()
         
@@ -86,15 +86,16 @@ class StackingConvPredictor(Predictor):
                     probs = stacking_output    
                     probs = F.softmax(probs, dim=1) #todo test sigmoid
                     probs = probs.squeeze().cpu().numpy()
-                    probs = self.combine_predictions(full_output_mask=np.delete(probs, 0, 0))
+
+                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
 
                     # TESTING
                     # mask = mask.squeeze().cpu().numpy()
                     # test = final_array_prediction.squeeze().cpu().numpy()
-                    # test = combine_predictions(full_output_mask=np.flip(test, axis=0), mask_threshold=0.1, shape=(512, 512))
+                    # test = self.combine_predictions(output_masks=np.flip(test, axis=0))
                     # visualize(image=probs, mask=test, additional_1=mask, additional_2=mask)
                     
-                    db.create_dataset(id[0], data=probs)    #  add the calcualted image in the hdf5 results file
+                    db.create_dataset(id[0], data=probs)    #  add the calculated image in the hdf5 results file
                     pbar.update(img.shape[0])   # update the pbar by number of imgs in batch
 
 

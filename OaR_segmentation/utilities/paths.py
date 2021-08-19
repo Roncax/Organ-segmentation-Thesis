@@ -25,7 +25,7 @@ class Paths:
         self.json_file_database = f'{self.dir_database}/{self.db_name}.json'
         self.json_experiments_settings = f'{self.dir_root}/data/results/experiments_settings.json'
 
-        self.dir_plots = f'{self.dir_root}/results/plots'
+        self.dir_plots = f'{self.dir_root}/data/results/plots'
         self.dir_stacking = f"{self.dir_root}/data/checkpoints_stacking"
 
         # HDF5
@@ -53,7 +53,7 @@ class Paths:
 
 
     def set_pretrained_model_stacking(self, dir):
-        self.dir_pretrained_model = f'{self.dir_root}/data/stacking/{dir}'
+        self.dir_pretrained_model = f'{self.dir_root}/data/checkpoints_stacking/{dir}'
 
 
     def set_pretrained_model(self, dir):

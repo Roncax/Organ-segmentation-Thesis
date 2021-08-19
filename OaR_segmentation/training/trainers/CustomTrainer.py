@@ -5,9 +5,9 @@ from torch import optim
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
 
-from OaR_segmentation.datasets.hdf5Dataset import HDF5Dataset
+from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 from OaR_segmentation.training.loss_factory import build_loss
-from OaR_segmentation.training.network_trainer import NetworkTrainer
+from OaR_segmentation.training.trainers.NetworkTrainer import NetworkTrainer
 from OaR_segmentation.evaluation import eval
 
 
