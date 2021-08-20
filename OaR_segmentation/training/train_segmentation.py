@@ -61,6 +61,7 @@ def run_training():
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_lr = False
+    finder_lr_iterations = 2000
 
     # INITIAL CHECKS
     assert not (feature_extraction and fine_tuning), "Finetuning and feature extraction cannot be both active"
@@ -83,7 +84,7 @@ def run_training():
                                 multi_loss_weights=multi_loss_weights, platform=platform, dataset_name=db_name)
         trainer.initialize()
         if find_lr:
-            trainer.find_lr(num_iters=2000)
+            trainer.find_lr(num_iters=finder_lr_iterations)
         else:
             trainer.run_training()
 
@@ -108,7 +109,7 @@ def run_training():
 
             trainer.initialize()
             if find_lr:
-                trainer.find_lr(num_iters=2000)
+                trainer.find_lr(num_iters=finder_lr_iterations)
             else:
                 trainer.run_training()
 

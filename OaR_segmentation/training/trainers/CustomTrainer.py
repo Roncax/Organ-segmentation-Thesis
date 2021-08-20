@@ -82,7 +82,7 @@ class CustomTrainer(NetworkTrainer):
 
     def initialize_optimizer_and_scheduler(self):
         #self.optimizer = optim.RMSprop(self.network.parameters(), lr=self.lr, weight_decay=1e-8, momentum=0.9)
-        self.optimizer = optim.Adam(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
+        self.optimizer = optim.Adam(self.network.parameters(), self.lr, weight_decay=self.weight_decay,
                                           amsgrad=True)
         self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2,
                                                            patience=self.lr_scheduler_patience,

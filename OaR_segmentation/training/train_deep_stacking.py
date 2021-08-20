@@ -115,6 +115,8 @@ if __name__ == "__main__":
     multi_loss_weights=[1, 1]
     channels = 6
     find_lr = False
+    finder_lr_iterations = 2000
+
 
     nets = {}
     for label in labels.keys():
@@ -140,6 +142,6 @@ if __name__ == "__main__":
 
     trainer.initialize()
     if find_lr:
-        trainer.find_lr(num_iters=2000)
+        trainer.find_lr(num_iters=finder_lr_iterations)
     else:
         trainer.run_training()

@@ -300,7 +300,7 @@ class NetworkTrainer(object):
                 # validation with train=False
                 self.network.eval()
                 val_losses = []
-                with trange(len(self.tr_gen), unit='batch', leave=False) as tbar:
+                with trange(len(self.val_gen), unit='batch', leave=False) as tbar:
                     for d in self.val_gen:
                         tbar.set_description("Validation epoch {}".format(self.epoch + 1))
 
