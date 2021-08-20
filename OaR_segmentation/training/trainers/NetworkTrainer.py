@@ -15,6 +15,7 @@ from abc import abstractmethod
 from datetime import datetime
 from tqdm import trange
 from nnunet.utilities.to_torch import maybe_to_torch, to_cuda
+from OaR_segmentation.utilities.data_vis import visualize
 
 matplotlib.use("agg")
 
@@ -70,14 +71,14 @@ class NetworkTrainer(object):
 
         ################# THESE DO NOT NECESSARILY NEED TO BE MODIFIED #####################
         self.patience = 5
-        self.val_eval_criterion_alpha = 0.9  # alpha * old + (1-alpha) * new
+        self.val_eval_criterion_alpha = 0.8  # alpha * old + (1-alpha) * new
         # if this is too low then the moving average will be too noisy and the training may terminate early. If it is
         # too high the training will take forever
-        self.train_loss_MA_alpha = 0.93  # alpha * old + (1-alpha) * new
+        self.train_loss_MA_alpha = 0.8  # alpha * old + (1-alpha) * new
         self.train_loss_MA_eps = 5e-4  # new MA must be at least this much better (smaller)
-        self.max_num_epochs = 1000
+        self.max_num_epochs = 500
         self.also_val_in_tr_mode = False
-        self.lr_threshold = 1  # 1e-6  # the network will not terminate training if the lr is still above this threshold
+        self.lr_threshold = 1e-6  # the network will not terminate training if the lr is still above this threshold
 
         ################# LEAVE THESE ALONE ################################################
         self.val_eval_criterion_MA = None
@@ -250,13 +251,7 @@ class NetworkTrainer(object):
         if self.fp16 and self.amp_grad_scaler is None:
             self.amp_grad_scaler = GradScaler()
 
-    def plot_network_architecture(self):
-        """
-        can be implemented (see nnUNetTrainer) but does not have to. Not implemented here because it imposes stronger
-        assumptions on the presence of class variables
-        :return:
-        """
-        pass
+
 
     def run_training(self):
 
@@ -266,7 +261,6 @@ class NetworkTrainer(object):
         self._maybe_init_amp()
 
         maybe_mkdir_p(self.output_folder)
-        self.plot_network_architecture()
 
         if cudnn.benchmark and cudnn.deterministic:
             warn("torch.backends.cudnn.deterministic is True indicating a deterministic training is desired. "
@@ -291,7 +285,7 @@ class NetworkTrainer(object):
 
                         l = self.run_iteration(data_dict=d, do_backprop=True)
 
-                        tbar.set_postfix(loss=l)
+                        tbar.set_postfix(loss=round(float(l), 4))
                         tbar.update(n=1)
                         train_losses_epoch.append(l)
             else:
@@ -312,7 +306,7 @@ class NetworkTrainer(object):
 
                         l = self.run_iteration(d, False, True)
 
-                        tbar.set_postfix(loss=l)
+                        tbar.set_postfix(loss=round(float(l), 4))
                         tbar.update(n=1)
                         val_losses.append(l)
 
@@ -355,9 +349,12 @@ class NetworkTrainer(object):
         # maybe update learning rate
         assert self.lr_scheduler is not None, "Scheduler is None"
         if self.lr_scheduler is not None:
-            assert isinstance(self.lr_scheduler, lr_scheduler.ReduceLROnPlateau)
-            # lr scheduler is updated with moving average val loss. should be more robust
-            self.lr_scheduler.step(self.train_loss_MA)
+            
+            if isinstance(self.lr_scheduler, lr_scheduler.ReduceLROnPlateau):
+                # lr scheduler is updated with moving average val loss. should be more robust
+                self.lr_scheduler.step(self.train_loss_MA)
+            else:
+                self.lr_scheduler.step(self.epoch + 1)
 
         self.print_to_log_file("lr is now (scheduler) %s" % str(self.optimizer.param_groups[0]['lr']))
 
@@ -454,14 +451,14 @@ class NetworkTrainer(object):
         # metrics
 
         self.plot_progress()
+        
+        self.validate()
 
         self.maybe_update_lr()
 
         self.maybe_save_checkpoint()
 
         self.update_eval_criterion_MA()
-
-        self.validate()
 
         continue_training = self.manage_patience()
 
@@ -475,8 +472,8 @@ class NetworkTrainer(object):
                                  self.all_tr_losses[-1]
 
     def run_iteration(self, data_dict, do_backprop=True, run_online_evaluation=False):
-        data = data_dict['image']
-        target = data_dict['mask']
+        data = data_dict['image_coarse']
+        target = data_dict['mask_gt']
 
         data = maybe_to_torch(data)
         target = maybe_to_torch(target)
@@ -492,17 +489,14 @@ class NetworkTrainer(object):
         if self.loss_criterion == "crossentropy":
             target = target.to(dtype=torch.long)
         
-
-
+        
         self.optimizer.zero_grad()
 
         if self.fp16:
             with autocast():
                 output = self.network(data)
                 
-                data_t = data.clone().detach().squeeze().cpu().numpy()
-                
-
+                # data_t = data.clone().detach().squeeze().cpu().numpy()
                 del data
                 l = self.loss(output, target)
 
@@ -528,7 +522,7 @@ class NetworkTrainer(object):
         # target_t = target.clone().detach().squeeze().cpu().numpy() * 7/255
         
         # visualize(image=data_t[4, :, :], mask=out_t, additional_1= target_t, additional_2=target_t,file_name="x")
-        #visualize(image=out_t, mask=target_t)
+        # visualize(image=out_t, mask=target_t)
 
         del target
 
@@ -572,36 +566,45 @@ class NetworkTrainer(object):
         best_loss = 0.
         losses = []
         log_lrs = []
+        
+        iterator_dataloader = iter(self.tr_gen)
+        
+        with trange(num_iters, unit='batch', leave=False) as tbar:
+            for batch_num in range(1, num_iters + 1):
+            
+                # +1 because this one here is not designed to have negative loss...
+                loss = self.run_iteration(next(iterator_dataloader), do_backprop=True, run_online_evaluation=False).item() + 1
 
-        for batch_num in range(1, num_iters + 1):
-            # +1 because this one here is not designed to have negative loss...
-            loss = self.run_iteration(self.tr_gen, do_backprop=True, run_online_evaluation=False).data.item() + 1
+                # Compute the smoothed loss
+                avg_loss = beta * avg_loss + (1 - beta) * loss
+                smoothed_loss = avg_loss / (1 - beta ** batch_num)
 
-            # Compute the smoothed loss
-            avg_loss = beta * avg_loss + (1 - beta) * loss
-            smoothed_loss = avg_loss / (1 - beta ** batch_num)
+                # Stop if the loss is exploding
+                if batch_num > 1 and smoothed_loss > 4 * best_loss:
+                    break
 
-            # Stop if the loss is exploding
-            if batch_num > 1 and smoothed_loss > 4 * best_loss:
-                break
+                # Record the best loss
+                if smoothed_loss < best_loss or batch_num == 1:
+                    best_loss = smoothed_loss
+                    best_lr = self.optimizer.param_groups[0]['lr']
 
-            # Record the best loss
-            if smoothed_loss < best_loss or batch_num == 1:
-                best_loss = smoothed_loss
+                # Store the values
+                losses.append(smoothed_loss)
+                log_lrs.append(math.log10(lr))
 
-            # Store the values
-            losses.append(smoothed_loss)
-            log_lrs.append(math.log10(lr))
-
-            # Update the lr for the next step
-            lr *= mult
-            self.optimizer.param_groups[0]['lr'] = lr
+                # Update the lr for the next step
+                lr *= mult
+                self.optimizer.param_groups[0]['lr'] = lr
+                
+                tbar.set_postfix(loss=lr)
+                tbar.update(n=1)
 
         import matplotlib.pyplot as plt
         lrs = [10 ** i for i in log_lrs]
         fig = plt.figure()
         plt.xscale('log')
         plt.plot(lrs[10:-5], losses[10:-5])
-        plt.savefig(join(self.output_folder, "lr_finder.png"))
+        plt.savefig("lr_finder.png")
         plt.close()
-        return log_lrs, losses
+        print(best_lr)
+        return log_lrs, losses, best_lr

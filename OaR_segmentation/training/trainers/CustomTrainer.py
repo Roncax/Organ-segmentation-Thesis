@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 from OaR_segmentation.training.loss_factory import build_loss
 from OaR_segmentation.training.trainers.NetworkTrainer import NetworkTrainer
-from OaR_segmentation.evaluation import eval
+from OaR_segmentation.evaluation import evaluation
 
 
 class CustomTrainer(NetworkTrainer):
@@ -29,7 +29,7 @@ class CustomTrainer(NetworkTrainer):
         self.patience = patience
         self.dataset_name = dataset_name
 
-        self.output_folder = None
+        self.output_folder = paths.dir_plots
         self.loss_criterion = loss_criterion
         self.multi_loss_weights = multi_loss_weights
         self.class_weights = None
@@ -43,8 +43,13 @@ class CustomTrainer(NetworkTrainer):
         self.batch_size = batch_size
         self.val_percent = val_percent
 
-        self.all_loss_custom_val = []
         self.experiment_number = None
+        
+        self.lr_scheduler_eps = 1e-3
+        self.lr_scheduler_patience = 5
+        self.initial_lr = 3e-4
+        self.weight_decay = 3e-5
+
 
     def set_experiment_number(self):
         dict_db_parameters = json.load(open(self.paths.json_experiments_settings))
@@ -73,18 +78,30 @@ class CustomTrainer(NetworkTrainer):
         self.json_log_save()
 
         self.was_initialized = True
+        
 
     def initialize_optimizer_and_scheduler(self):
-        self.optimizer = optim.RMSprop(self.network.parameters(), lr=self.lr, weight_decay=1e-8, momentum=0.9)
-        self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer=self.optimizer, mode='min', patience=2)
+        #self.optimizer = optim.RMSprop(self.network.parameters(), lr=self.lr, weight_decay=1e-8, momentum=0.9)
+        self.optimizer = optim.Adam(self.network.parameters(), self.initial_lr, weight_decay=self.weight_decay,
+                                          amsgrad=True)
+        self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2,
+                                                           patience=self.lr_scheduler_patience,
+                                                           verbose=True, threshold=self.lr_scheduler_eps,
+                                                           threshold_mode="abs")
 
     def validate(self, *args, **kwargs):
-        loss_custom_val = eval.eval_train(self.network, self.val_gen, self.device)
-        self.all_loss_custom_val.append(loss_custom_val)
-        self.print_to_log_file(f"My custom validation loss is {self.all_loss_custom_val[-1]}")
+        loss_custom_val = evaluation.eval_train(self.network, self.val_gen, self.device)
+        self.all_val_eval_metrics.append(loss_custom_val)
+        self.print_to_log_file(f"My real validation loss is {self.all_val_eval_metrics[-1]}")
 
+
+        
+    def on_epoch_end(self):
+        continue_training = super().on_epoch_end()
         self.update_json_train()
         self.update_tsboard()
+        return continue_training
+
 
     def load_dataset(self):
         # DATASET split train/val
@@ -108,12 +125,12 @@ class CustomTrainer(NetworkTrainer):
         temp_dict = {
             "Train": self.all_tr_losses[-1],
             "Validation": self.all_val_losses[-1],
-            'Custom_validation': self.all_loss_custom_val[-1]
+            'Real_validation': self.all_val_eval_metrics[-1]
         }
 
         self.writer.add_scalar("Loss/train", self.all_tr_losses[-1], self.epoch)
         self.writer.add_scalar(tag='Loss/validation', scalar_value=self.all_val_losses[-1], global_step=self.epoch)
-        self.writer.add_scalar(tag='Loss/custom_validation', scalar_value=self.all_loss_custom_val[-1],
+        self.writer.add_scalar(tag='Loss/real_validation', scalar_value=self.all_val_eval_metrics[-1],
                                global_step=self.epoch)
         self.writer.add_scalars(main_tag='Losses', tag_scalar_dict=temp_dict, global_step=self.epoch)
         self.writer.add_scalars(main_tag='MA', tag_scalar_dict={"Train": self.train_loss_MA,
@@ -156,7 +173,11 @@ class CustomTrainer(NetworkTrainer):
                 "class_weights": self.class_weights,
                 "train_loss_MA_alpha": self.train_loss_MA_alpha,
                 "train_loss_MA_eps": self.train_loss_MA_eps,
-                "val_eval_criterion_alpha": self.val_eval_criterion_alpha
+                "val_eval_criterion_alpha": self.val_eval_criterion_alpha,
+                "lr_scheduler_eps": self.lr_scheduler_eps,
+                "lr_scheduler_patience": self.lr_scheduler_patience ,
+                "initial_lr": self.initial_lr,
+                "weight_decay": self.weight_decay,
             }
         }
         temp = json.load(open(self.paths.json_file_train_results))
@@ -167,7 +188,7 @@ class CustomTrainer(NetworkTrainer):
         temp_dict = {self.epoch:
                          {"validation_loss": float(self.all_val_losses[-1]),
                           "avg_train_loss": float(self.all_tr_losses[-1]),
-                          "loss_custom_val": float(self.all_loss_custom_val[-1]),
+                          "loss_real_val": float(self.all_val_eval_metrics[-1]),
                           "val_eval_criterion_MA": float(self.val_eval_criterion_MA),
                           "train_loss_MA": float(self.train_loss_MA)
                           }

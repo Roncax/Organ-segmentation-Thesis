@@ -1,5 +1,5 @@
 import sys
-sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: Organ-segmentation-Thesis
+sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: /notebooks/Organ-segmentation-Thesis/
 
 import json
 

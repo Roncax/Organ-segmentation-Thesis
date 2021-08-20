@@ -19,7 +19,7 @@ def eval_train(net, loader, device):
     with tqdm(total=n_val, desc='Custom validation round', unit='batch', leave=False) as pbar:
         # iterate over all val batch
         for batch in loader:
-            imgs, true_masks = batch['image'], batch['mask']
+            imgs, true_masks = batch['image_coarse'], batch['mask_gt']
             imgs = imgs.to(device=device, dtype=torch.float32)
             true_masks = true_masks.to(device=device, dtype=mask_type)
 
