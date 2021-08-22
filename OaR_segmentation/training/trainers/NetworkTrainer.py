@@ -71,10 +71,10 @@ class NetworkTrainer(object):
 
         ################# THESE DO NOT NECESSARILY NEED TO BE MODIFIED #####################
         self.patience = 5
-        self.val_eval_criterion_alpha = 0.8  # alpha * old + (1-alpha) * new
+        self.val_eval_criterion_alpha = 0.5  # alpha * old + (1-alpha) * new
         # if this is too low then the moving average will be too noisy and the training may terminate early. If it is
         # too high the training will take forever
-        self.train_loss_MA_alpha = 0.8  # alpha * old + (1-alpha) * new
+        self.train_loss_MA_alpha = 0.5  # alpha * old + (1-alpha) * new
         self.train_loss_MA_eps = 1e-3  # new MA must be at least this much better (smaller)
         self.max_num_epochs = 500
         self.also_val_in_tr_mode = False
@@ -101,10 +101,10 @@ class NetworkTrainer(object):
             self.use_progress_bar = bool(int(os.environ['nnunet_use_progress_bar']))
 
         ################# Settings for saving checkpoints ##################################
-        self.save_every = 5
+        self.save_every = 10
         self.save_latest_only = False  # if false it will not store/overwrite _latest but separate files each
         # time an intermediate checkpoint is created
-        self.save_intermediate_checkpoints = False  # whether or not to save checkpoint_latest
+        self.save_intermediate_checkpoints = True  # whether or not to save checkpoint_latest
         self.save_best_checkpoint = True  # whether or not to save the best checkpoint according to self.best_val_eval_criterion_MA
         self.save_final_checkpoint = True  # whether or not to save the final checkpoint
 
