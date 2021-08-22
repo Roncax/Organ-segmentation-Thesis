@@ -46,7 +46,7 @@ class CustomTrainer(NetworkTrainer):
         self.experiment_number = None
         
         self.lr_scheduler_eps = 1e-3
-        self.lr_scheduler_patience = 5
+        self.lr_scheduler_patience = 3
         self.initial_lr = 3e-4
         self.weight_decay = 3e-5
 
@@ -84,7 +84,7 @@ class CustomTrainer(NetworkTrainer):
         #self.optimizer = optim.RMSprop(self.network.parameters(), lr=self.lr, weight_decay=1e-8, momentum=0.9)
         self.optimizer = optim.Adam(self.network.parameters(), self.lr, weight_decay=self.weight_decay,
                                           amsgrad=True)
-        self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.2,
+        self.lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.1,
                                                            patience=self.lr_scheduler_patience,
                                                            verbose=True, threshold=self.lr_scheduler_eps,
                                                            threshold_mode="abs")

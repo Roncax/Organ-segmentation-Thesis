@@ -19,3 +19,4 @@
 
     DBs: SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     sources: local, gradient, polimi
+    /notebooks/Organ-segmentation-Thesis

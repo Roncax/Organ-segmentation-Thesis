@@ -10,33 +10,33 @@ from OaR_segmentation.network_architecture.net_factory import build_net
 def run_training():
     
     labels = {
-                "1": "RightLung",
-                "2": "LeftLung",
-                "3": "Heart",
-                "4": "Trachea",
-                "5": "Esophagus",
-                "6": "SpinalCord"
-            }
+        "1": "RightLung",
+        "2": "LeftLung",
+        "3": "Heart",
+        "4": "Trachea",
+        "5": "Esophagus",
+        "6": "SpinalCord"
+        }
     
     load_dir_list = {
-                    "1": "931/model_best.model",
-                    "2": "931/model_best.model",
-                    "3": "931/model_best.model",
-                    "4": "931/model_best.model",
-                    "5": "931/model_best.model",
-                    "6": "931/model_best.model",
-                    "coarse": ""
+                "1": "1048/model_best.model",
+                "2": "1049/model_best.model",
+                "3": "1051/model_best.model",
+                "4": "1052/model_best.model",
+                "5": "1053/model_best.model",
+                "6": "1054/model_best.model",
+                "coarse": "931/model_best.model"
                 }
 
     # dice, bce, binaryFocal, multiclassFocal, crossentropy, dc_bce
     loss_criteria = {
-                    "1": "dc_bce",
-                    "2": "dc_bce",
-                    "3": "dc_bce",
-                    "4": "dc_bce",
-                    "5": "dc_bce",
-                    "6": "dc_bce",
-                    "coarse": "crossentropy"
+                "1": "dc_bce",
+                "2": "dc_bce",
+                "3": "dc_bce",
+                "4": "dc_bce",
+                "5": "dc_bce",
+                "6": "dc_bce",
+                "coarse": "crossentropy"
                 }
 
     model = "unet"   #seresunet, unet, segnet, deeplabv3
@@ -50,7 +50,7 @@ def run_training():
     feature_extraction = False  
     augmentation = True  
     train_type = 'coarse'  
-    deep_supervision = False  #only unet and seresunet
+    deep_supervision = True  #only unet and seresunet
     dropout = True  #deeplav3 builded in, unet and seresunet only (segnet not supported)
     scale = 1 
     channels = 1 # used for multi-channel 3d method (forse problemi con deeplab)

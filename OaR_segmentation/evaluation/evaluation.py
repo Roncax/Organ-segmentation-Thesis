@@ -16,7 +16,7 @@ def eval_train(net, loader, device):
     n_val = len(loader)  # the number of batches
     tot = 0
     tp, fp, tn, fn = 0, 0, 0, 0
-    with tqdm(total=n_val, desc='Custom validation round', unit='batch', leave=False) as pbar:
+    with tqdm(total=n_val, desc='Real validation round', unit='batch', leave=False) as pbar:
         # iterate over all val batch
         for batch in loader:
             imgs, true_masks = batch['image_coarse'], batch['mask_gt']
@@ -30,7 +30,7 @@ def eval_train(net, loader, device):
             for true_mask, pred in zip(true_masks, mask_pred):
                 if net.n_classes > 1:
                     # multiclass evaluation over single image-mask pair
-                    tot += F.cross_entropy(pred.unsqueeze(dim=0), true_mask).item()
+                    tot += F.cross_entropy(input=pred, target=true_mask).item()
 
                 else:
                     # Single class evaluation over all validation volume
