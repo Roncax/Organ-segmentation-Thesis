@@ -1,5 +1,5 @@
 import sys
-sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: Organ-segmentation-Thesis
+sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: from albumentations import augmentations
 
 import OaR_segmentation.utilities.paths as paths
 from dicom_load import prepare_dicom

@@ -1,8 +1,7 @@
 import sys
+sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: /notebooks/Organ-segmentation-Thesis
 
-from albumentations import augmentations
-# gradient: Organ-segmentation-Thesis
-sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/')
+
 
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 from OaR_segmentation.utilities.data_vis import visualize, visualize_test
@@ -16,6 +15,7 @@ import numpy as np
 import h5py
 import json
 from OaR_segmentation.utilities.paths import Paths
+from albumentations import augmentations
 
 
 

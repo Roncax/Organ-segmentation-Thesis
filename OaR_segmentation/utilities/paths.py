@@ -15,9 +15,9 @@ class Paths:
         if platform == "local":
             self.dir_root = '/home/roncax/Git/organ_segmentation_thesis'
         elif platform == "gradient":
-            self.dir_root = 'Organ-segmentation-Thesis'
+            self.dir_root = '/notebooks/Organ-segmentation-Thesis'
         elif platform == "polimi":
-            self.dir_root = 'Organ-segmentation-Thesis'
+            self.dir_root = '/notebooks/Organ-segmentation-Thesis'
             
         # Directories
         self.dir_database = f'{self.dir_root}/data/datasets/{self.db_name}'
