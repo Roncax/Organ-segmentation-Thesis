@@ -1,10 +1,15 @@
 # Organ at risk Segmentation - **WIP**
 
-PyTorch implementation of multiple nets for image semantic segmentation with medical images (CT-MRI).
+PyTorch implementation of multiple nets for image semantic segmentation with medical images (CT-MRI). The main work here is to find and compare optimal stacking methods for multiclass (and multi-dataset) segmentation.
 
-## Nets
+## Segmentation Nets
 - Unet
-- Unet ensemble (1 coarse + n_classes binary segmentation) + combination
+- SegNet
+- DeepLabv3
+- Se-ResUnet
+## Stacking methods
+- Convolutional
+- Avg
 ## Datasets:
 - Structseg 2019
 - AAPM Lung 2017 (in progress)
@@ -16,14 +21,15 @@ PyTorch implementation of multiple nets for image semantic segmentation with med
 ## DB directories:
 ```bash
 data
-  |- databases
+  |- datasets
     |- database_name
       |- plots
       |- raw_data (.nii or dicom files)
         |- volume_number (patient)
       |- db_name.json (info about dataset)
-  |- checkpoints
-  |- runs (tensorboard logs)
+  |- checkpoints_segmentation
+  |- checkpoints_stacking
+  |- results
   ```
 
 ## HDF5 structure:
