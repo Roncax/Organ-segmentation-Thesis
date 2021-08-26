@@ -27,6 +27,7 @@ class Paths:
 
         self.dir_plots = f'{self.dir_root}/data/results/plots'
         self.dir_stacking = f"{self.dir_root}/data/checkpoints_stacking"
+        self.dir_segmentation = f"{self.dir_root}/data/checkpoints_segmentation"
 
         # HDF5
         self.hdf5_db = f"{self.dir_database}/{self.db_name}.hdf5"
@@ -41,7 +42,7 @@ class Paths:
 
 
     def set_experiment_number(self, n):
-        self.dir_checkpoint = f'{self.dir_root}/data/checkpoints_segmentation/{n}'
+        self.dir_checkpoint = f'{self.dir_segmentation}/{n}'
         
         
     def set_experiment_stacking_number(self, n):
@@ -53,9 +54,9 @@ class Paths:
 
 
     def set_pretrained_model_stacking(self, dir):
-        self.dir_pretrained_model = f'{self.dir_root}/data/checkpoints_stacking/{dir}'
+        self.dir_pretrained_model = f'{self.dir_stacking}/{dir}'
 
 
     def set_pretrained_model(self, dir):
-        self.dir_pretrained_model = f'{self.dir_root}/data/checkpoints_segmentation/{dir}'
+        self.dir_pretrained_model = f'{self.dir_segmentation}/{dir}'
 

@@ -16,6 +16,7 @@ from datetime import datetime
 from tqdm import trange
 from nnunet.utilities.to_torch import maybe_to_torch, to_cuda
 from OaR_segmentation.utilities.data_vis import visualize
+import torch.nn.functional as F
 
 matplotlib.use("agg")
 
@@ -78,7 +79,7 @@ class NetworkTrainer(object):
         self.train_loss_MA_eps = 1e-3  # new MA must be at least this much better (smaller)
         self.max_num_epochs = 500
         self.also_val_in_tr_mode = False
-        self.lr_threshold = 1  # the network will not terminate training if the lr is still above this threshold
+        self.lr_threshold = 0.01  # the network will not terminate training if the lr is still above this threshold
 
         ################# LEAVE THESE ALONE ################################################
         self.val_eval_criterion_MA = None
@@ -277,14 +278,15 @@ class NetworkTrainer(object):
 
             # train one epoch
             self.network.train()
-
+            i=0
             if self.use_progress_bar:
                 with trange(len(self.tr_gen), unit='batch', leave=False) as tbar:
                     for d in self.tr_gen:
-                        tbar.set_description("Epoch {}/{}".format(self.epoch + 1, self.max_num_epochs))
+                        tbar.set_description("Epoch {}/{}".format(self.epoch, self.max_num_epochs))
 
-                        l = self.run_iteration(data_dict=d, do_backprop=True)
+                        l = self.run_iteration(data_dict=d, do_backprop=True, viz=True if i%100==0 else False)
 
+                        i+=1
                         tbar.set_postfix(loss=round(float(l), 4))
                         tbar.update(n=1)
                         train_losses_epoch.append(l)
@@ -302,7 +304,7 @@ class NetworkTrainer(object):
                 val_losses = []
                 with trange(len(self.val_gen), unit='batch', leave=False) as tbar:
                     for d in self.val_gen:
-                        tbar.set_description("Validation epoch {}".format(self.epoch + 1))
+                        tbar.set_description("Validation epoch {}".format(self.epoch))
 
                         l = self.run_iteration(d, False, True)
 
@@ -387,13 +389,11 @@ class NetworkTrainer(object):
                 We here use alpha * old - (1 - alpha) * new because new in this case is the validation loss and lower
                 is better, so we need to negate it.
                 """
-                self.val_eval_criterion_MA = self.val_eval_criterion_alpha * self.val_eval_criterion_MA - (
-                        1 - self.val_eval_criterion_alpha) * \
-                                             self.all_val_losses[-1]
+                self.val_eval_criterion_MA = self.val_eval_criterion_alpha * self.val_eval_criterion_MA + (
+                        1 - self.val_eval_criterion_alpha) * self.all_val_losses[-1]
             else:
                 self.val_eval_criterion_MA = self.val_eval_criterion_alpha * self.val_eval_criterion_MA + (
-                        1 - self.val_eval_criterion_alpha) * \
-                                             self.all_val_eval_metrics[-1]
+                        1 - self.val_eval_criterion_alpha) * self.all_val_eval_metrics[-1]
 
     def manage_patience(self):
         # update patience
@@ -416,7 +416,7 @@ class NetworkTrainer(object):
             self.print_to_log_file("current best_val_eval_criterion_MA is %.4f0" % self.best_val_eval_criterion_MA)
             self.print_to_log_file("current val_eval_criterion_MA is %.4f" % self.val_eval_criterion_MA)
 
-            if self.val_eval_criterion_MA > self.best_val_eval_criterion_MA:
+            if self.val_eval_criterion_MA < self.best_val_eval_criterion_MA:
                 self.best_val_eval_criterion_MA = self.val_eval_criterion_MA
                 self.print_to_log_file("saving best epoch checkpoint...")
                 if self.save_best_checkpoint: self.save_checkpoint(join(self.output_folder, "model_best.model"))
@@ -471,7 +471,7 @@ class NetworkTrainer(object):
             self.train_loss_MA = self.train_loss_MA_alpha * self.train_loss_MA + (1 - self.train_loss_MA_alpha) * \
                                  self.all_tr_losses[-1]
 
-    def run_iteration(self, data_dict, do_backprop=True, run_online_evaluation=False):
+    def run_iteration(self, data_dict, do_backprop=True, run_online_evaluation=False, viz = False):
         data = data_dict['image_coarse']
         target = data_dict['mask_gt']
 
@@ -482,7 +482,7 @@ class NetworkTrainer(object):
             data = to_cuda(data)
             target = to_cuda(target)
 
-        if self.loss_criterion == "crossentropy" or self.loss_criterion == "dice":
+        if self.loss_criterion == "crossentropy" or self.loss_criterion == "dice" or self.loss_criterion == "multiclassFocal":
             target = target.to(self.device)
             target = target.squeeze(dim=1)
         
@@ -496,7 +496,7 @@ class NetworkTrainer(object):
             with autocast():
                 output = self.network(data)
                 
-                # data_t = data.clone().detach().squeeze().cpu().numpy()
+                data_t = data.clone().detach().squeeze().cpu().numpy()
                 del data
                 l = self.loss(output, target)
 
@@ -517,12 +517,12 @@ class NetworkTrainer(object):
         if run_online_evaluation:
             self.run_online_evaluation(output, target)
         
-        # out_t = output.clone().detach().squeeze().cpu().numpy()
-        # out_t = combine_predictions(full_output_mask=out_t, mask_threshold=0.5, shape=(512,512)) 
-        # target_t = target.clone().detach().squeeze().cpu().numpy() * 7/255
-        
-        # visualize(image=data_t[4, :, :], mask=out_t, additional_1= target_t, additional_2=target_t,file_name="x")
-        # visualize(image=out_t, mask=target_t)
+        if viz:
+            out_t = F.softmax(output, dim=1)
+            out_t = out_t.clone().detach().squeeze(0).cpu().numpy()
+            out_t = self.combine_predictions(output_masks=out_t, threshold=0.1) 
+            target_t = target.clone().detach().squeeze().cpu().numpy()       
+            visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t,file_name="x")
 
         del target
 
@@ -608,3 +608,31 @@ class NetworkTrainer(object):
         plt.close()
         print(best_lr)
         return log_lrs, losses, best_lr
+
+
+    def combine_predictions(self, output_masks, threshold = None):
+        """Combine the output masks in one single dimension and threshold it. 
+        The returned matrix has value in range (1, shape(output_mask)[0])
+
+        Args:
+            output_masks (Cxnxn numpy matrix): Output nets matrix
+
+        Returns:
+            (nxn) numpy matrix: A combination of all output mask in the first dimension of the matrix
+        """
+        if threshold is not None:
+            self.mask_threshold = threshold
+            
+        matrix_shape = np.shape(output_masks[0])
+        combination_matrix = np.zeros(shape=matrix_shape)
+        
+        output_masks[not np.argmax(output_masks)] = 0
+        output_masks[output_masks >= self.mask_threshold] = 1
+        output_masks[output_masks < self.mask_threshold] = 0
+
+        for i in range(np.shape(output_masks)[0]):
+            combination_matrix[output_masks[i,:,:] == 1] = i+1 #on single dimension - single image
+            #full_output_mask[i, full_output_mask[i, :, :] == 1] = i+1 # on multiple dimension - multiple images 
+
+        return combination_matrix
+    

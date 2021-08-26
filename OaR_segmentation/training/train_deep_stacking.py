@@ -1,64 +1,14 @@
 import sys
-sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/') # gradient: /notebooks/Organ-segmentation-Thesis
+sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/')
 
 
-
-from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
-from OaR_segmentation.utilities.data_vis import visualize, visualize_test
-from OaR_segmentation.training.trainers.CustomTrainerStacking import CustomTrainerStacking
+from OaR_segmentation.utilities.concat_output_prediction import create_combined_dataset
+from OaR_segmentation.training.trainers.ConvolutionTrainer import ConvolutionTrainer
 from OaR_segmentation.network_architecture.net_factory import build_net
-from tqdm import tqdm
-from torch.utils.data import DataLoader
-import torch.nn.functional as F
-import torch
-import numpy as np
-import h5py
-import json
 from OaR_segmentation.utilities.paths import Paths
 from albumentations import augmentations
+from copy import deepcopy
 
-
-
-def create_combined_dataset(scale, nets,  paths, labels):
-    dataset = HDF5Dataset(scale=scale, mode='test', db_info=json.load(open(paths.json_file_database)), 
-                          hdf5_db_dir=paths.hdf5_db, channels=1, labels=labels)
-    
-    test_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
-
-    with h5py.File(paths.hdf5_stacking, 'w') as db:
-        with tqdm(total=len(dataset), unit='img') as pbar:
-            for i, batch in enumerate(test_loader):
-                imgs = batch['dict_organs']
-                mask_gt = batch['mask_gt']
-                
-                mask_gt = mask_gt.squeeze().cpu().numpy()
-                db.create_dataset(f"{i}/gt", data=mask_gt)
-
-                for organ in nets.keys():
-                    nets[organ].eval()
-                    img = imgs[organ].to(device="cuda", dtype=torch.float32)
-
-                    with torch.no_grad():
-                        output = nets[organ](img)
-
-                    probs = output
-                    probs = torch.sigmoid(probs) # todo log_softmax, raw logits, log_sigmoid, softmax
-                    full_mask = probs.squeeze().squeeze().cpu().numpy()
-
-                    # TESTING
-                    # img_t = img.clone().detach().squeeze().cpu().numpy()
-                    # full_mask_thresholded = full_mask > mask_threshold
-                    # print(organ)
-                    # visualize(image=full_mask, mask=img_t, additional_1=full_mask_thresholded, additional_2=mask_gt ,file_name=f"{i}_{organ}")
-                    # if(i==0 and organ == "3"):
-                    #     print("hey")
-                    # res = np.array(full_mask).astype(np.bool)
-
-                    db.create_dataset(f"{i}/{organ}", data=full_mask)
-
-                # update the pbar by number of imgs in batch
-                pbar.update(img.shape[0])
-                
 
 if __name__ == "__main__":
     
@@ -100,7 +50,7 @@ if __name__ == "__main__":
     deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     channels = 1
     paths = Paths(db=db_name, platform=platform)
-    loss_criterion = 'crossentropy'
+    loss_criterion = 'crossentropy' # dice, bce, binaryFocal, multiclassFocal, crossentropy, dc_bce
     lr = 0.02
     patience = 5
     deep_supervision = False
@@ -108,7 +58,7 @@ if __name__ == "__main__":
     fine_tuning = False
     batch_size = 1
     scale = 1
-    augmentations = False
+    augmentation = False
     feature_extraction = False
     epochs = 500
     validation_size = 0.2
@@ -116,6 +66,10 @@ if __name__ == "__main__":
     channels = 6
     find_lr = False
     finder_lr_iterations = 2000
+    find_optimal_lr = False
+    finder_lr_iterations = 2000
+    optimizer = "adam" #adam, rmsprop
+
 
 
     nets = {}
@@ -132,16 +86,19 @@ if __name__ == "__main__":
 
     net = build_net(model='stack_UNet', n_classes=n_classes, channels=channels, load_inference=False)
 
-    trainer = CustomTrainerStacking(paths=paths, image_scale=scale, augmentation=augmentations,
-                                    batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,
-                                    labels=labels, network=net, deep_supervision=deep_supervision, dropout=dropout,
-                                    fine_tuning=fine_tuning, feature_extraction=feature_extraction,
-                                    pretrained_model='', lr=lr, patience=patience, epochs=epochs,
-                                    multi_loss_weights=multi_loss_weights, platform=platform, 
-                                    used_output_models=models, dataset_name=db_name)
+    trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
+                                batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,
+                                labels=labels, network=net, deep_supervision=deep_supervision, 
+                                lr=lr, patience=patience, epochs=epochs,
+                                multi_loss_weights=multi_loss_weights, platform=platform, 
+                                dataset_name=db_name, optimizer_type=optimizer, stacking=True)
+
+    if find_optimal_lr:
+        trainer_temp = deepcopy(trainer)
+        trainer_temp.initialize()
+        _, _, optimal_lr = trainer_temp.find_lr(num_iters=finder_lr_iterations)
+        trainer.lr = optimal_lr
 
     trainer.initialize()
-    if find_lr:
-        trainer.find_lr(num_iters=finder_lr_iterations)
-    else:
-        trainer.run_training()
+    trainer.setup_info_dict(dropout=dropout, feature_extraction=feature_extraction, pretrained_model=load_dir_list, fine_tuning=fine_tuning, used_output_models=models)
+    trainer.run_training()

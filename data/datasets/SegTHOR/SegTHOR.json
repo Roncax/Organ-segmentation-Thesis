@@ -53,14 +53,16 @@
         "Heart": 40,
         "Esophagus": 40,
         "Trachea": 40,
-        "Aorta": 40
+        "Aorta": 40,
+        "coarse": 40
     },
     "CTwindow_width": {
         "Bg": 350,
         "Heart": 350,
         "Esophagus": 350,
         "Trachea": 350,
-        "Aorta": 350
+        "Aorta": 350,
+        "coarse": 350
     },
     "numTraining": 32,
     "numTest": 8,
