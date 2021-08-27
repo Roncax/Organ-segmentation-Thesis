@@ -111,8 +111,10 @@ def visualize(image, mask, file_name=None, additional_1=None, additional_2=None 
         ax[1, 1].set_title('Additional 2', fontsize=fontsize)
 
     plt.show()
+    
     if file_name is not None:
-        plt.savefig(f"temp_img/{file_name}")
+        plt.savefig(f"{file_name}")
+        plt.close()
 
 def visualize_test(dict_images:dict, info:list=False):
     fontsize = 18

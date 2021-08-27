@@ -17,6 +17,7 @@ from tqdm import trange
 from nnunet.utilities.to_torch import maybe_to_torch, to_cuda
 from OaR_segmentation.utilities.data_vis import visualize
 import torch.nn.functional as F
+from OaR_segmentation.utilities.argmax_combination import combine_predictions
 
 matplotlib.use("agg")
 
@@ -284,7 +285,7 @@ class NetworkTrainer(object):
                     for d in self.tr_gen:
                         tbar.set_description("Epoch {}/{}".format(self.epoch, self.max_num_epochs))
 
-                        l = self.run_iteration(data_dict=d, do_backprop=True, viz=True if i%100==0 else False)
+                        l = self.run_iteration(data_dict=d, do_backprop=True, viz=False) #True if i%100==0 else False)
 
                         i+=1
                         tbar.set_postfix(loss=round(float(l), 4))
@@ -517,12 +518,9 @@ class NetworkTrainer(object):
         if run_online_evaluation:
             self.run_online_evaluation(output, target)
         
+        #test purpose
         if viz:
-            out_t = F.softmax(output, dim=1)
-            out_t = out_t.clone().detach().squeeze(0).cpu().numpy()
-            out_t = self.combine_predictions(output_masks=out_t, threshold=0.1) 
-            target_t = target.clone().detach().squeeze().cpu().numpy()       
-            visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t,file_name="x")
+            self.test_viz(output=output,target=target, data_t=data_t)
 
         del target
 
@@ -548,7 +546,7 @@ class NetworkTrainer(object):
     def validate(self, *args, **kwargs):
         pass
 
-    def find_lr(self, num_iters=1000, init_value=1e-6, final_value=10., beta=0.98):
+    def find_lr(self, paths, num_iters=1000, init_value=1e-6, final_value=10., beta=0.98):
         """
         stolen and adapted from here: https://sgugger.github.io/how-do-you-find-a-good-learning-rate.html
         :param num_iters:
@@ -604,35 +602,14 @@ class NetworkTrainer(object):
         fig = plt.figure()
         plt.xscale('log')
         plt.plot(lrs[10:-5], losses[10:-5])
-        plt.savefig("lr_finder.png")
+        plt.savefig(f"{paths.dir_checkpoint}/lr_finder.png")
         plt.close()
-        print(best_lr)
         return log_lrs, losses, best_lr
 
 
-    def combine_predictions(self, output_masks, threshold = None):
-        """Combine the output masks in one single dimension and threshold it. 
-        The returned matrix has value in range (1, shape(output_mask)[0])
-
-        Args:
-            output_masks (Cxnxn numpy matrix): Output nets matrix
-
-        Returns:
-            (nxn) numpy matrix: A combination of all output mask in the first dimension of the matrix
-        """
-        if threshold is not None:
-            self.mask_threshold = threshold
-            
-        matrix_shape = np.shape(output_masks[0])
-        combination_matrix = np.zeros(shape=matrix_shape)
-        
-        output_masks[not np.argmax(output_masks)] = 0
-        output_masks[output_masks >= self.mask_threshold] = 1
-        output_masks[output_masks < self.mask_threshold] = 0
-
-        for i in range(np.shape(output_masks)[0]):
-            combination_matrix[output_masks[i,:,:] == 1] = i+1 #on single dimension - single image
-            #full_output_mask[i, full_output_mask[i, :, :] == 1] = i+1 # on multiple dimension - multiple images 
-
-        return combination_matrix
-    
+    def test_viz(output, target, data_t):
+        out_t = F.softmax(output, dim=1)
+        out_t = out_t.clone().detach().squeeze(0).cpu().numpy()
+        out_t = combine_predictions(output_masks=out_t, threshold=0.00001) 
+        target_t = target.clone().detach().squeeze().cpu().numpy()       
+        visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img")

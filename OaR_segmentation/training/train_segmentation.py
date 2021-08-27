@@ -31,12 +31,12 @@ def run_training():
 
     # dice, bce, binaryFocal, multiclassFocal, crossentropy, dc_bce
     loss_criteria = {
-                "1": "dice",
-                "2": "dice",
-                "3": "dice",
-                "4": "dice",
-                "5": "dice",
-                "6": "dice",
+                "1": "dc_bce",
+                "2": "dc_bce",
+                "3": "dc_bce",
+                "4": "dc_bce",
+                "5": "dc_bce",
+                "6": "dc_bce",
                 "coarse": "crossentropy"
                 }
 
@@ -97,7 +97,7 @@ def run_training():
     if find_optimal_lr:
         trainer_temp = deepcopy(trainer)
         trainer_temp.initialize()
-        _, _, optimal_lr = trainer_temp.find_lr(num_iters=finder_lr_iterations)
+        _, _, optimal_lr = trainer_temp.find_lr(num_iters=finder_lr_iterations, paths=paths)
         trainer.lr = optimal_lr
 
     trainer.initialize()
