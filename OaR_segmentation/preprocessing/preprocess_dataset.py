@@ -51,9 +51,9 @@ def prepare_inference(img = None, mask=None, scale = 1):
         mask = np.expand_dims(mask, axis=2)
 
         resize = A.Resize(height=int(scale * w), width=int(scale * h), always_apply=True)
-        resized_img = resize(mask=mask)
-        original_mask = resized_img['mask']
-        mask = original_mask.transpose((2, 0, 1))    
+        resized_img = resize(image=mask)
+        original_mask = resized_img['image']
+        mask = original_mask.transpose((2, 0, 1))
 
     if img is not None:
         w, h = np.shape(img)
@@ -67,4 +67,9 @@ def prepare_inference(img = None, mask=None, scale = 1):
         img = original_img / 255
         img = img.transpose((2, 0, 1))
 
-    return img, mask
+    if img is None:
+        return mask
+    elif mask is None:
+        return img
+    else:
+        return img, mask

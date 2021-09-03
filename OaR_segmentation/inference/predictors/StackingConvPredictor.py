@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 from OaR_segmentation.network_architecture.net_factory import build_net
 from OaR_segmentation.inference.predictors.Predictor import Predictor
-from OaR_segmentation.utilities.data_vis import visualize, visualize_test
+from OaR_segmentation.utilities.data_vis import visualize
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class StackingConvPredictor(Predictor):
@@ -55,7 +55,7 @@ class StackingConvPredictor(Predictor):
         with h5py.File(self.paths.hdf5_results, 'w') as db:
             with tqdm(total=len(dataset), unit='img') as pbar:
                 for batch in test_loader:
-                    imgs = batch['image_organ']
+                    imgs = batch['dict_organs']
                     mask = batch['mask']
                     id = batch['id']
                     
@@ -90,10 +90,10 @@ class StackingConvPredictor(Predictor):
                     probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
 
                     # TESTING
-                    # mask = mask.squeeze().cpu().numpy()
-                    # test = final_array_prediction.squeeze().cpu().numpy()
-                    # test = self.combine_predictions(output_masks=np.flip(test, axis=0))
-                    # visualize(image=probs, mask=test, additional_1=mask, additional_2=mask)
+                    mask = mask.squeeze().cpu().numpy()
+                    test = final_array_prediction.squeeze().cpu().numpy()
+                    test = self.combine_predictions(output_masks=np.flip(test, axis=0))
+                    visualize(image=probs, mask=test, additional_1=mask, additional_2=mask, file_name='temp_img/x')
                     
                     db.create_dataset(id[0], data=probs)    #  add the calculated image in the hdf5 results file
                     pbar.update(img.shape[0])   # update the pbar by number of imgs in batch

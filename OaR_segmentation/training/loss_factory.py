@@ -14,7 +14,7 @@ def build_loss(loss_criterion, deep_supervision, n_classes, class_weights=None, 
         "dice": losses.DiceLoss(mode=mode),
         "crossentropy": nn.CrossEntropyLoss(weight=weights) if mode=="multiclass" else nn.BCEWithLogitsLoss(),
         "focal": losses.FocalLoss(mode=mode),
-        "dc_bce": BCE_DC_loss(ce_dc_weights=ce_dc_weights, mode = mode, class_weights=weights)
+        "dc_ce": BCE_DC_loss(ce_dc_weights=ce_dc_weights, mode = mode, class_weights=weights)
     }
 
     loss = switcher.get(loss_criterion, "Error, the specified criterion doesn't exist")

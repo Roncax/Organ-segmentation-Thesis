@@ -2,8 +2,9 @@
 import h5py
 import torch
 from torch.utils.data.dataloader import DataLoader
-import tqdm
+from tqdm import trange
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
+import json
 
 
 def create_combined_dataset(scale, nets,  paths, labels):
@@ -13,7 +14,7 @@ def create_combined_dataset(scale, nets,  paths, labels):
     test_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
 
     with h5py.File(paths.hdf5_stacking, 'w') as db:
-        with tqdm(total=len(dataset), unit='img') as pbar:
+        with trange(len(dataset), unit='img') as pbar:
             for i, batch in enumerate(test_loader):
                 imgs = batch['dict_organs']
                 mask_gt = batch['mask_gt']

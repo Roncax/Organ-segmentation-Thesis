@@ -10,13 +10,10 @@ from copy import deepcopy
 def run_training():
     
     labels = {
-    # "1": "RightLung",
-    # "2": "LeftLung",
-    # "3": "Heart",
-    "4": "Trachea",
-    # "5": "Esophagus",
-    # "6": "SpinalCord"
-
+        "1": "Esophagus",
+        "2": "Heart",
+        "3": "Trachea",
+        "4": "Aorta"
         }
     
     load_dir_list = {
@@ -29,40 +26,42 @@ def run_training():
                 "coarse": "931/model_best.model"
                 }
 
-    # dice, bce, binaryFocal, multiclassFocal, crossentropy, dc_bce
+    # dice, focal, crossentropy, dc_ce
     loss_criteria = {
-                "1": "dc_bce",
-                "2": "dc_bce",
-                "3": "dc_bce",
-                "4": "dc_bce",
-                "5": "dc_bce",
-                "6": "dc_bce",
+                "1": "dice",
+                "2": "dice",
+                "3": "dice",
+                "4": "dice",
+                "5": "dice",
+                "6": "dice",
                 "coarse": "crossentropy"
                 }
 
     model = "unet"   #seresunet, unet, segnet, deeplabv3
-    db_name = "StructSeg2019_Task3_Thoracic_OAR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
+    db_name = "SegTHOR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     epochs = 500  
     batch_size = 1  
-    lr = 0.0001  
+    lr = 1e-2
     val = 0.20  
     patience = 5  
     fine_tuning = False 
     feature_extraction = False  
     augmentation = True  
-    deep_supervision = False  #only unet and seresunet
-    dropout = False  #deeplav3 builded in, unet and seresunet only (segnet not supported)
+    deep_supervision = True  #only unet and seresunet
+    dropout = True  #deeplav3 builded in, unet and seresunet only (segnet not supported)
     scale = 1 
     channels = 1 # used for multi-channel 3d method (forse problemi con deeplab)
-    multi_loss_weights = [1, 1]  # for composite losses
+    multi_loss_weights = [1, 1] # [ce, dice]
     deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     platform = "local"  # local, gradient, polimi
-    n_classes = 1   # 1 if binary, n+1 if n organ
+    n_classes = 5   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
+    telegram = False
+
 
     # INITIAL CHECKS
     assert not (feature_extraction and fine_tuning), "Finetuning and feature extraction cannot be both active"
@@ -91,7 +90,7 @@ def run_training():
                                 labels=labels, network=net, deep_supervision=deep_supervision, 
                                 lr=lr, patience=patience, epochs=epochs,
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
-                                dataset_name=db_name,optimizer_type=optimizer)
+                                dataset_name=db_name,optimizer_type=optimizer, telegram=telegram)
     
 
     if find_optimal_lr:

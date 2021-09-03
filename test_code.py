@@ -166,4 +166,8 @@ def test_dice():
     # smooth=1 : dice=2.0
     # smooth=1e-5 : dice=2.0
     
-test_dice()
+import torch
+print(torch.__version__)
+print(torch.version.cuda)
+print(torch.backends.cudnn.version())
+print(torch.cuda.is_available())

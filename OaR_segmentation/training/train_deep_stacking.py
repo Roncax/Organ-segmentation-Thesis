@@ -6,19 +6,18 @@ from OaR_segmentation.utilities.concat_output_prediction import create_combined_
 from OaR_segmentation.training.trainers.ConvolutionTrainer import ConvolutionTrainer
 from OaR_segmentation.network_architecture.net_factory import build_net
 from OaR_segmentation.utilities.paths import Paths
-from albumentations import augmentations
 from copy import deepcopy
 
 
 if __name__ == "__main__":
     
     load_dir_list = {
-        "1": "1048/model_best.model",
-        "2": "1049/model_best.model",
-        "3": "1051/model_best.model",
-        "4": "1052/model_best.model",
-        "5": "1053/model_best.model",
-        "6": "1054/model_best.model",
+        "1": "10009/model_best.model",
+        "2": "10011/model_best.model",
+        "3": "10012/model_best.model",
+        "4": "10013/model_best.model",
+        "5": "10015/model_best.model",
+        "6": "10016/model_best.model",
         "coarse": "931/model_best.model"
     }
 
@@ -33,7 +32,7 @@ if __name__ == "__main__":
     }
 
     labels = {
-        "0": "Bg",
+        #"0": "Bg",
         "1": "RightLung",
         "2": "LeftLung",
         "3": "Heart",
@@ -44,14 +43,13 @@ if __name__ == "__main__":
     
     db_name = "StructSeg2019_Task3_Thoracic_OAR"
     platform = "local" #local, gradient, polimi
-    db_prediction_creation = True
+    db_prediction_creation = False
     n_classes = 7   # 1 if binary, n+1 if n organ
     scale = 1
     deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
-    channels = 1
     paths = Paths(db=db_name, platform=platform)
-    loss_criterion = 'crossentropy' # dice, bce, binaryFocal, multiclassFocal, crossentropy, dc_bce
-    lr = 0.02
+    loss_criterion = 'crossentropy' # dice, focal, crossentropy, dc_ce
+    lr = 1e-3 
     patience = 5
     deep_supervision = False
     dropout = False
@@ -62,13 +60,13 @@ if __name__ == "__main__":
     feature_extraction = False
     epochs = 500
     validation_size = 0.2
-    multi_loss_weights=[1, 1]
+    multi_loss_weights=[1, 1] # [ce, dice]
     channels = 6
-    find_lr = False
     finder_lr_iterations = 2000
     find_optimal_lr = False
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
+    telegram = False
 
 
 
@@ -77,7 +75,7 @@ if __name__ == "__main__":
         paths.set_pretrained_model(load_dir_list[label])
         paths.set_train_stacking_results()
 
-        nets[label] = build_net(model=models[label], n_classes=1, channels=channels,
+        nets[label] = build_net(model=models[label], n_classes=1, channels=1,
                                 load_inference=True, load_dir=paths.dir_pretrained_model)
 
     if db_prediction_creation:
@@ -91,7 +89,7 @@ if __name__ == "__main__":
                                 labels=labels, network=net, deep_supervision=deep_supervision, 
                                 lr=lr, patience=patience, epochs=epochs,
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
-                                dataset_name=db_name, optimizer_type=optimizer, stacking=True)
+                                dataset_name=db_name, optimizer_type=optimizer, stacking=True, telegram=telegram)
 
     if find_optimal_lr:
         trainer_temp = deepcopy(trainer)

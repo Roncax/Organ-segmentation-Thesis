@@ -1,3 +1,6 @@
+import os
+
+
 class Paths:
     
     """Simple data class to store all useful paths
@@ -55,7 +58,10 @@ class Paths:
 
     def set_pretrained_model_stacking(self, dir):
         self.dir_pretrained_model = f'{self.dir_stacking}/{dir}'
-
+        
+    def set_plots_folder(self, experiment_number):
+        self.dir_plots = self.dir_plots+f'/{experiment_number}'
+        os.makedirs(self.dir_plots, exist_ok=True)
 
     def set_pretrained_model(self, dir):
         self.dir_pretrained_model = f'{self.dir_segmentation}/{dir}'

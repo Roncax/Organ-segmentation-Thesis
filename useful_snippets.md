@@ -1,10 +1,10 @@
 # Databases
 SegThor:
 "0": "Bg",
+"1": "Esophagus",
 "2": "Heart",
-"4": "Aorta",
 "3": "Trachea",
-"1": "Esophagus"
+"4": "Aorta"
 
 Structseg:
 "0": "Bg",

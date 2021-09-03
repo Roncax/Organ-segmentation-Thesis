@@ -38,14 +38,13 @@ class StandardPredictor(Predictor):
 
         self.net.eval()
         dataset = HDF5Dataset(scale=self.scale, mode='test', db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
-                              labels=self.labels, channels=self.net.n_channels)
+                              labels=self.labels, channels=self.net.n_channels, multiclass_test=True)
         test_loader = DataLoader(
             dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
         with h5py.File(self.paths.hdf5_results, 'w') as db:
             with tqdm(total=len(dataset), unit='img') as pbar:
                 for batch in test_loader:
-                    imgs = batch['image'].to(
-                        device="cuda", dtype=torch.float32)
+                    imgs = batch['image_coarse'].to(device="cuda", dtype=torch.float32)
                     id = batch['id']
 
                     with torch.no_grad():

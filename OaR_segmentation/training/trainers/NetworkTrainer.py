@@ -80,7 +80,7 @@ class NetworkTrainer(object):
         self.train_loss_MA_eps = 1e-3  # new MA must be at least this much better (smaller)
         self.max_num_epochs = 500
         self.also_val_in_tr_mode = False
-        self.lr_threshold = 0.01  # the network will not terminate training if the lr is still above this threshold
+        self.lr_threshold = 1e-4  # the network will not terminate training if the lr is still above this threshold
 
         ################# LEAVE THESE ALONE ################################################
         self.val_eval_criterion_MA = None
@@ -285,7 +285,7 @@ class NetworkTrainer(object):
                     for d in self.tr_gen:
                         tbar.set_description("Epoch {}/{}".format(self.epoch, self.max_num_epochs))
 
-                        l = self.run_iteration(data_dict=d, do_backprop=True, viz=False) #True if i%100==0 else False)
+                        l = self.run_iteration(data_dict=d, do_backprop=True, viz =False)#True if i%100==0 else False)
 
                         i+=1
                         tbar.set_postfix(loss=round(float(l), 4))
@@ -483,12 +483,12 @@ class NetworkTrainer(object):
             data = to_cuda(data)
             target = to_cuda(target)
 
-        if self.loss_criterion == "crossentropy" or self.loss_criterion == "dice" or self.loss_criterion == "multiclassFocal":
+        if self.network.n_classes > 1:
             target = target.to(self.device)
             target = target.squeeze(dim=1)
         
-        if self.loss_criterion == "crossentropy":
-            target = target.to(dtype=torch.long)
+            if self.loss_criterion == "crossentropy":
+                target = target.to(dtype=torch.long)
         
         
         self.optimizer.zero_grad()
@@ -607,9 +607,12 @@ class NetworkTrainer(object):
         return log_lrs, losses, best_lr
 
 
-    def test_viz(output, target, data_t):
-        out_t = F.softmax(output, dim=1)
-        out_t = out_t.clone().detach().squeeze(0).cpu().numpy()
-        out_t = combine_predictions(output_masks=out_t, threshold=0.00001) 
+    def test_viz(self, output, target, data_t):
+        out_t = F.sigmoid(output)
+        out_t = output.clone().detach().squeeze(0).cpu().numpy()
+        out_t = combine_predictions(output_masks=np.delete(out_t, 0, 0), threshold=0.5)
+        
+        data_t = combine_predictions(output_masks=data_t, threshold=0.5)
+        
         target_t = target.clone().detach().squeeze().cpu().numpy()       
         visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img")

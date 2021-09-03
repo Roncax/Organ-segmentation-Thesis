@@ -1,15 +1,13 @@
-from OaR_segmentation.utilities.data_vis import visualize, visualize_test
 import h5py
 import numpy as np
 import torch
-from torch.utils.data import Dataset
-import logging
 from OaR_segmentation.preprocessing.ct_levels_enhance import setDicomWinWidthWinCenter
 from OaR_segmentation.preprocessing.preprocess_dataset import *
+from torch.utils.data import Dataset
 
 
 class HDF5Dataset(Dataset):
-    def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  channels, augmentation=False):
+    def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  channels, augmentation=False, multiclass_test = False):
         self.db_info = db_info
         self.labels = labels
         self.db_dir = hdf5_db_dir
@@ -17,13 +15,12 @@ class HDF5Dataset(Dataset):
         self.mode = mode
         self.augmentation = augmentation
         self.channels = channels
-        self.ids_img_mask_dict = []  # for multi-channel purpose
+        self.multiclass_test = multiclass_test
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
 
         self.ids_img = []
         self.ids_mask = []
         
-        if mode == "stacking": mode="train" #only the local variable change, the class still see "stacking"
         db = h5py.File(self.db_dir, 'r')
         # upload data from the hdf5 sctructure
         for volumes in db[f'{self.db_info["name"]}/{mode}'].keys():
@@ -32,10 +29,7 @@ class HDF5Dataset(Dataset):
                 self.ids_img.append(f'{self.db_info["name"]}/{mode}/{volumes}/image/{slice}')
                 self.ids_mask.append(f'{self.db_info["name"]}/{mode}/{volumes}/mask/{slice}')
 
-        assert len(self.ids_img) == len(
-            self.ids_mask), f"Error in the number of mask {len(self.ids_mask)} and images{len(self.ids_img)}"
-
-        logging.info(f'Creating {self.mode} dataset with {len(self.ids_img)} images')
+        assert len(self.ids_img) == len(self.ids_mask), f"Error in the number of mask {len(self.ids_mask)} and images{len(self.ids_img)}"
 
     def __len__(self):
         return len(self.ids_img)
@@ -72,24 +66,28 @@ class HDF5Dataset(Dataset):
                                                           augmentation=self.augmentation)
         
         # TESTING and STACKING PREPROCESSING
-        # Adjust the level of ct for fine segmentation (all organs in a dictionary)
+        # Adjust the level of ct for fine segmentation (all organs in a labels)
         elif self.mode == "test":
             # Adjust the level of ct for coarse segmentation
             img_coarse = setDicomWinWidthWinCenter(img_data=img, winwidth=self.db_info["CTwindow_width"]["coarse"],
                                                    wincenter=self.db_info["CTwindow_level"]["coarse"])
             img_coarse = np.uint8(img_coarse)
             
-            for key in self.labels.keys():
-                img_single_organ = setDicomWinWidthWinCenter(img_data=img,
-                                                            winwidth=self.db_info["CTwindow_width"][self.labels[key]],
-                                                            wincenter=self.db_info["CTwindow_level"][self.labels[key]])
-                img_single_organ = np.uint8(img_single_organ)
-                img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale)
-                img_single_organ = torch.from_numpy(img_single_organ).type(torch.FloatTensor)
-                img_dict[key] = img_single_organ
-                
-                # Create the ground truth mask 
-                mask_gt[mask == int(key)] = key
+            if self.multiclass_test:
+                mask_gt = mask
+                #empty img_dict
+            else:
+                for key in self.labels.keys():
+                    img_single_organ = setDicomWinWidthWinCenter(img_data=img,
+                                                                winwidth=self.db_info["CTwindow_width"][self.labels[key]],
+                                                                wincenter=self.db_info["CTwindow_level"][self.labels[key]])
+                    img_single_organ = np.uint8(img_single_organ)
+                    img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale)
+                    img_single_organ = torch.from_numpy(img_single_organ).type(torch.FloatTensor)
+                    img_dict[key] = img_single_organ
+                    
+                    # Create the ground truth mask 
+                    mask_gt[mask == int(key)] = key
 
             # Some preprocessing to the images
             img_coarse, mask_gt = prepare_inference(img=img_coarse, mask=mask_gt, scale=self.scale)

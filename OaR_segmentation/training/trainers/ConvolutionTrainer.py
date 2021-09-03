@@ -16,7 +16,7 @@ import telegram_send
 
 class ConvolutionTrainer(NetworkTrainer):
     def __init__(self, paths, image_scale, augmentation, batch_size, loss_criterion, val_percent, labels, network, deep_supervision,
-                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type,  stacking = False, deterministic=False,
+                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, telegram,  stacking = False, deterministic=False,
                  fp16=True):
         super(ConvolutionTrainer, self).__init__(deterministic=deterministic, fp16=fp16)
 
@@ -34,6 +34,7 @@ class ConvolutionTrainer(NetworkTrainer):
         self.dataset_directory = paths.dir_database
         self.lr = lr
         self.platform = platform
+        self.telegram=telegram
 
         self.img_scale = image_scale
         self.labels = labels
@@ -103,9 +104,10 @@ class ConvolutionTrainer(NetworkTrainer):
         continue_training = super().on_epoch_end()
         self.update_json_train()
         self.update_tsboard()
-        self.send_telegram_update(f"Epoch {self.epoch} ended, validation loss {round(self.all_val_eval_metrics[-1], 4)}")
-        if not continue_training:
-            self.send_telegram_update(f"Patience ended, training done!")
+        if self.telegram:
+            self.send_telegram_update(f"Epoch {self.epoch} ended, validation loss {round(self.all_val_eval_metrics[-1], 4)}")
+            if not continue_training:
+                self.send_telegram_update(f"Patience ended, training done!")
 
         return continue_training
 

@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 from OaR_segmentation.utilities.build_volume import grayscale2rgb_mask
-from OaR_segmentation.utilities.data_vis import prediction_plot, volume2gif, plot_single_result
+from OaR_segmentation.utilities.data_vis import prediction_plot, volume2gif, plot_single_result, boxplot_plotly
 from OaR_segmentation.utilities.paths import Paths
 from OaR_segmentation.evaluation import metrics
 from OaR_segmentation.evaluation.metrics import ConfusionMatrix
@@ -70,6 +70,7 @@ class Predictor(object):
         """        
         
         results = {}
+        self.paths.set_plots_folder(experiment_number = experiment_num)
 
         with h5py.File(self.paths.hdf5_results, 'r') as db:
             with h5py.File(self.paths.hdf5_db, 'r') as db_train:
@@ -123,9 +124,10 @@ class Predictor(object):
                     # plot results
                     for m in metrics_list:
                         results_dict = self.save_results(results=results, path_json=self.paths.json_file_inference_results, met=m,
-                                                    experiment_num=experiment_num, test_info=dict_test_info, labels=self.labels, path_settings=self.paths.json_experiments_settings)
+                                                        experiment_num=experiment_num, test_info=dict_test_info, labels=self.labels, 
+                                                        path_settings=self.paths.json_experiments_settings)
 
-                        plot_single_result(score=results_dict, type=m, paths=self.paths.dir_plots, exp_num=experiment_num)
+                        boxplot_plotly(score=results_dict, type=m, path=self.paths.dir_plots, exp_num=experiment_num, colors=colormap)
 
 
     # calculate and save all the metrics

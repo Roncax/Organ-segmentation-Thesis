@@ -19,21 +19,26 @@ def eval_train(net, loader, device):
     with tqdm(total=n_val, desc='Real validation round', unit='batch', leave=False) as pbar:
         # iterate over all val batch
         for batch in loader:
-            imgs, true_masks = batch['image_coarse'], batch['mask_gt']
+            imgs = batch['image_coarse']
+            true_masks = batch['mask_gt']
             imgs = imgs.to(device=device, dtype=torch.float32)
             true_masks = true_masks.to(device=device, dtype=mask_type)
 
             with torch.no_grad():
                 mask_pred = net(imgs)
+            
+            if net.deep_supervision:
+                mask_pred = mask_pred[0]
+                
+                # iterate over all files of single batch
 
-            # iterate over all files of single batch
+
             for true_mask, pred in zip(true_masks, mask_pred):
                 if net.n_classes > 1:
                     # multiclass evaluation over single image-mask pair
-                    tot += F.cross_entropy(input=pred, target=true_mask).item()
-
+                    tot += F.cross_entropy(input=mask_pred, target=true_masks.squeeze(1)).item()
                 else:
-                    # Single class evaluation over all validation volume
+                # Single class evaluation over all validation volume
                     pred = torch.sigmoid(pred)
                     pred = (pred > 0.5).float()  # 0 or 1 by threeshold
                     pred=pred.squeeze(dim=1)

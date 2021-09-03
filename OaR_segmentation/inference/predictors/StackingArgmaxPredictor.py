@@ -46,7 +46,7 @@ class StackingArgmaxPredictor(Predictor):
         with h5py.File(self.paths.hdf5_results, 'w') as db:
             with tqdm(total=len(dataset), unit='img') as pbar:
                 for batch in test_loader:
-                    imgs = batch['image_organ']
+                    imgs = batch['dict_organs']
                     id = batch['id']
                     final_array_prediction = None
 

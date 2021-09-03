@@ -1,15 +1,10 @@
-import json
-import logging
 import os
 
-import h5py
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
-import random
-from tqdm import tqdm
-
 from OaR_segmentation.evaluation import metrics
+import plotly.express as px
 
 
 def save_img_mask_plot(img, mask, ground_truth, paths, fig_name="fig", patient_name="Default"):
@@ -67,7 +62,7 @@ def volume2gif(volume, target_folder, out_name,):
     imageio.mimsave(f"{target_folder}/{out_name}.gif", volume)
 
 
-def plot_single_result(score, type, paths, exp_num):
+def plot_single_result(score, type, path, exp_num):
     fig, ax = plt.subplots()
 
     ax.boxplot(x=score.values(), labels=score.keys())
@@ -75,17 +70,15 @@ def plot_single_result(score, type, paths, exp_num):
     plt.xticks(rotation=-45)
     plt.ylim(bottom=0)
 
-    os.makedirs(f"{paths}", exist_ok=True)
-    plt.savefig(paths + f"/{exp_num}_{type}.png")
+    os.makedirs(f"{path}", exist_ok=True)
+    plt.savefig(path + f"/{exp_num}_{type}.png")
+    plt.close()
 
-
-def plot_results(results, paths, labels, used_net, met='all', mode=""):
-    if met == all:
-        met = metrics.ALL_METRICS.keys()
-
-    for m in met:
-        plot_single_result(results=results, type=m, paths=paths, labels=labels, mode=mode, used_net=used_net)
-
+        
+def boxplot_plotly(score, type, path, exp_num, colors):    
+    fig = px.box(data_frame=score, title=f'{exp_num}_{type}')
+    fig.write_html(path + f"/{exp_num}_{type}.html")    
+    
 
 def visualize(image, mask, file_name=None, additional_1=None, additional_2=None ):
     fontsize = 18
@@ -113,25 +106,9 @@ def visualize(image, mask, file_name=None, additional_1=None, additional_2=None 
     plt.show()
     
     if file_name is not None:
-        plt.savefig(f"{file_name}")
-        plt.close()
-
-def visualize_test(dict_images:dict, info:list=False):
-    fontsize = 18
-
-    f, ax = plt.subplots(len(dict_images), figsize=(8, 8))
-
-    i=0
-    for img in dict_images.keys():
-        ax[i].imshow(dict_images[img])
-        ax[i].set_title(img, fontsize=fontsize)
-        i+=1
-    # temp=""
-    # for str_t in info:
-    #     temp+= " " + str(str_t)
-    # plt.figtext(0.5, 0.01, temp, ha="center", fontsize=18, bbox={"facecolor": "orange", "alpha": 0.5, "pad": 5})
-    plt.show()
-    #plt.savefig(str(random.randint(1, 1000)))
+        plt.savefig(file_name)
+        
+    plt.close()
 
 
 

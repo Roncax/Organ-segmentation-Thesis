@@ -29,7 +29,7 @@ class HDF5DatasetStacking(Dataset):
 
     def __getitem__(self, idx):
         db = h5py.File(self.db_dir, 'r')
-        masks = db[self.ids_mask[idx]]
+        masks = db[self.ids_mask[idx]] # "n/organ"
         
         #
         final_array = None
@@ -47,7 +47,7 @@ class HDF5DatasetStacking(Dataset):
             
                 
         return {
-                    'image': torch.from_numpy(final_array).type(torch.FloatTensor),
-                    'mask': torch.from_numpy(gt_mask).type(torch.FloatTensor),
+                    'image_coarse': torch.from_numpy(final_array).type(torch.FloatTensor),
+                    'mask_gt': torch.from_numpy(gt_mask).type(torch.FloatTensor),
                     'id': self.ids_mask[idx]
                 }

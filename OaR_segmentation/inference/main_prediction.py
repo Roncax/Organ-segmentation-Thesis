@@ -12,13 +12,13 @@ from OaR_segmentation.utilities.paths import Paths
 if __name__ == "__main__":
     
     load_models_dir = {
-        "1": "1048/model_best.model",
-        "2": "1049/model_best.model",
-        "3": "1051/model_best.model",
-        "4": "1052/model_best.model",
-        "5": "1053/model_best.model",
-        "6": "1054/model_best.model",
-        "coarse": "931/model_best.model"
+        "1": "10009/model_best.model",
+        "2": "10011/model_best.model",
+        "3": "10012/model_best.model",
+        "4": "10013/model_best.model",
+        "5": "10015/model_best.model",
+        "6": "10016/model_best.model",
+        "coarse": "10007/model_best.model"
     }
     
     models_type_list = {"1": "unet",
@@ -48,8 +48,8 @@ if __name__ == "__main__":
     scale = 1
     mask_threshold = 0.5
     channels = 1
-    metrics_list = ['Dice', 'Hausdorff Distance 95', "Avg. Surface Distance"]
-    stacking_mode = "none" #none, argmax, convolutional
+    metrics_list = ['Precision', 'Recall','Dice', 'Hausdorff Distance 95', 'Avg. Surface Distance']
+    stacking_mode = "argmax" #none, argmax, convolutional
     
     # PATHS management
     paths = Paths(db=db_name, platform=platform)
@@ -69,9 +69,10 @@ if __name__ == "__main__":
     }
 
     ######## BEGIN INFERENCE ########
+    # standard multiclass
     if stacking_mode == "none":
         predictor = StandardPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
-        predictor.initialize(load_models_dir=load_models_dir, channels=channels,models_type_list=models_type_list, deeplab_backbone=deeplab_backbone)
+        predictor.initialize(load_models_dir=load_models_dir, channels=channels, models_type_list=models_type_list, deeplab_backbone=deeplab_backbone)
        
     elif stacking_mode == "argmax":
         predictor = StackingArgmaxPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
@@ -83,6 +84,5 @@ if __name__ == "__main__":
         
         
     predictor.predict()
-    predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], 
-                                   experiment_num=experiment_num, dict_test_info=dict_test_info)
+    predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], experiment_num=experiment_num, dict_test_info=dict_test_info)
         
