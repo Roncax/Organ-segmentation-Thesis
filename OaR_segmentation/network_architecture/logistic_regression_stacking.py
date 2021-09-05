@@ -2,6 +2,7 @@ from torch import nn
 import torch
 from torch._C import device
 import torch.functional as F
+import numpy as np
 
 class LogisticRegression(nn.Module):
     def __init__(self, input_size, n_classes):
@@ -24,22 +25,24 @@ class LogisticRegression(nn.Module):
     
     
     def validation_step(self, img, organ):
-        self.eval()
         organ = organ.to(device='cuda')
         out = self(img)                    # Generate predictions
-        loss = torch.nn.CrossEntropyLoss(out, organ)   # Calculate loss
+        loss = self.criterion(out, organ)   # Calculate loss
         acc = accuracy(out, organ)           # Calculate accuracy
-        return {'val_loss': loss, 'val_acc': acc}
+        return {'val_loss': loss.item(), 'val_acc': acc}
         
     def validation_epoch_end(self, outputs):
         batch_losses = [x['val_loss'] for x in outputs]
-        epoch_loss = torch.stack(batch_losses).mean()   # Combine losses
+        epoch_loss = np.mean(batch_losses)   # Combine losses
         batch_accs = [x['val_acc'] for x in outputs]
-        epoch_acc = torch.stack(batch_accs).mean()      # Combine accuracies
-        return {'val_loss': epoch_loss.item(), 'val_acc': epoch_acc.item()}
+        epoch_acc = np.mean(batch_accs)      # Combine accuracies
+        return {'val_loss': epoch_loss, 'val_acc': epoch_acc}
     
     def epoch_end(self, epoch, result):
         print("Epoch [{}], val_loss: {:.4f}, val_acc: {:.4f}".format(epoch, result['val_loss'], result['val_acc']))
+        
+    def save_checkpoint(self, path):
+        torch.save(self.state_dict(), path)
     
 def accuracy(outputs, labels):
     _, preds = torch.max(outputs, dim=1)

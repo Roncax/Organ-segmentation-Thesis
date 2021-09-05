@@ -18,7 +18,7 @@ if __name__ == "__main__":
         "4": "10013/model_best.model",
         "5": "10015/model_best.model",
         "6": "10016/model_best.model",
-        "coarse": "10007/model_best.model"
+        "coarse": "1222/model_best.model"
     }
     
     models_type_list = {"1": "unet",
@@ -32,24 +32,22 @@ if __name__ == "__main__":
 
     labels = {
         #"0": "Bg",
-        "1": "RightLung",
-        "2": "LeftLung",
-        "3": "Heart",
-        "4": "Trachea",
-        "5": "Esophagus",
-        "6": "SpinalCord"
+        "1": "Esophagus",
+        "2": "Heart",
+        "3": "Trachea",
+        "4": "Aorta"
     }
     
-    db_name = "StructSeg2019_Task3_Thoracic_OAR"
+    db_name = "SegTHOR"
     platform = "local"  # local, colab, polimi
     load_dir_metamodel = "189/model_latest.model"
     deeplab_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
-    n_classes = 7   # 1 if binary, n+1 if n organ
+    n_classes = 5   # 1 if binary, n+1 if n organ
     scale = 1
     mask_threshold = 0.5
     channels = 1
     metrics_list = ['Precision', 'Recall','Dice', 'Hausdorff Distance 95', 'Avg. Surface Distance']
-    stacking_mode = "argmax" #none, argmax, convolutional
+    stacking_mode = "none" #none, argmax, convolutional
     
     # PATHS management
     paths = Paths(db=db_name, platform=platform)

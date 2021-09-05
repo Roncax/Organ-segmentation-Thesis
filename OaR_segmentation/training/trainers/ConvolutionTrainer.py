@@ -59,7 +59,10 @@ class ConvolutionTrainer(NetworkTrainer):
         dict_db_parameters[name] += 1
         self.experiment_number = dict_db_parameters[name]
         json.dump(dict_db_parameters, open(self.paths.json_experiments_settings, "w"))
-        self.paths.set_experiment_number(self.experiment_number)
+        if self.stacking:
+            self.paths.set_experiment_stacking_number(self.experiment_number)
+        else:
+            self.paths.set_experiment_number(self.experiment_number)
         self.output_folder = self.paths.dir_checkpoint
 
     def initialize(self, training=True):

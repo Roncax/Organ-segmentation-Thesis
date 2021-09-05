@@ -31,6 +31,7 @@ class Paths:
         self.dir_plots = f'{self.dir_root}/data/results/plots'
         self.dir_stacking = f"{self.dir_root}/data/checkpoints_stacking"
         self.dir_segmentation = f"{self.dir_root}/data/checkpoints_segmentation"
+        self.dir_logreg = f"{self.dir_root}/data/checkpoints_logreg"
 
         # HDF5
         self.hdf5_db = f"{self.dir_database}/{self.db_name}.hdf5"
@@ -46,10 +47,15 @@ class Paths:
 
     def set_experiment_number(self, n):
         self.dir_checkpoint = f'{self.dir_segmentation}/{n}'
-        
+        os.makedirs(self.dir_checkpoint, exist_ok=True)
         
     def set_experiment_stacking_number(self, n):
         self.dir_checkpoint = f'{self.dir_stacking}/{n}'
+        os.makedirs(self.dir_checkpoint, exist_ok=True)
+        
+    def set_experiment_logreg_number(self, n):
+        self.dir_checkpoint = f'{self.dir_logreg}/{n}'
+        os.makedirs(self.dir_checkpoint, exist_ok=True)
 
 
     def set_train_stacking_results(self):

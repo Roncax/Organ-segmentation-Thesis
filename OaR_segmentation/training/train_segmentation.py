@@ -10,10 +10,10 @@ from copy import deepcopy
 def run_training():
     
     labels = {
-        "1": "Esophagus",
+        # "1": "Esophagus",
         "2": "Heart",
-        "3": "Trachea",
-        "4": "Aorta"
+        # "3": "Trachea",
+        # "4": "Aorta"
         }
     
     load_dir_list = {
@@ -26,14 +26,14 @@ def run_training():
                 "coarse": "931/model_best.model"
                 }
 
-    # dice, focal, crossentropy, dc_ce
+    # dice, focal, crossentropy, dc_ce, twersky, jaccard
     loss_criteria = {
-                "1": "dice",
-                "2": "dice",
-                "3": "dice",
-                "4": "dice",
-                "5": "dice",
-                "6": "dice",
+                "1": "twersky",
+                "2": "twersky",
+                "3": "twersky",
+                "4": "twersky",
+                "5": "twersky",
+                "6": "twersky",
                 "coarse": "crossentropy"
                 }
 
@@ -41,7 +41,7 @@ def run_training():
     db_name = "SegTHOR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     epochs = 500  
     batch_size = 1  
-    lr = 1e-2
+    lr = 1e-3
     val = 0.20  
     patience = 5  
     fine_tuning = False 
@@ -54,12 +54,12 @@ def run_training():
     multi_loss_weights = [1, 1] # [ce, dice]
     deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     platform = "local"  # local, gradient, polimi
-    n_classes = 5   # 1 if binary, n+1 if n organ
+    n_classes = 1   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
     finder_lr_iterations = 2000
-    optimizer = "adam" #adam, rmsprop
+    optimizer = "rmsprop" #adam, rmsprop
     telegram = False
 
 

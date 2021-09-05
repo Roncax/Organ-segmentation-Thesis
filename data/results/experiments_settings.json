@@ -1,1 +1,1 @@
-{"experiments_local": 1222, "experiments_gradient": 10012, "experiments_polimi": 20000, "inference_experiment": 22, "stacking_experiments": 44}
+{"experiments_local": 1225, "experiments_gradient": 10040, "experiments_polimi": 20000, "inference_experiment": 25, "stacking_experiments": 44, "logreg_experiments": 4}

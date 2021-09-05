@@ -2,6 +2,7 @@ import h5py
 import numpy as np
 from OaR_segmentation.preprocessing.preprocess_dataset import *
 from torch.utils.data import Dataset
+import torch
 
 
 class HDF5DatasetLogReg(Dataset):
