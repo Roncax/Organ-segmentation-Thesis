@@ -7,7 +7,8 @@ from torch.utils.data import Dataset
 
 
 class HDF5Dataset(Dataset):
-    def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  channels, augmentation=False, multiclass_test = False):
+    def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  
+                 channels, augmentation=False, multiclass_test = False, db_set_train=False):
         self.db_info = db_info
         self.labels = labels
         self.db_dir = hdf5_db_dir
@@ -16,8 +17,13 @@ class HDF5Dataset(Dataset):
         self.augmentation = augmentation
         self.channels = channels
         self.multiclass_test = multiclass_test
-        assert 0 < scale <= 1, 'Scale must be between 0 and 1'
 
+        assert 0 < scale <= 1, 'Scale must be between 0 and 1'
+        
+        # used to train the convolutional stacking on train set, but with test set transformations
+        if db_set_train:
+            mode = 'train'
+        
         self.ids_img = []
         self.ids_mask = []
         
@@ -50,6 +56,8 @@ class HDF5Dataset(Dataset):
             if len(self.labels.items()) == 1:
 
                 single_label = next(iter(self.labels))
+                crop = self.db_info["crop_scale"][self.labels[single_label]]
+                crop_size = (crop, crop)
                 img_coarse = setDicomWinWidthWinCenter(img_data=img,
                                                 winwidth=self.db_info["CTwindow_width"][self.labels[single_label]],
                                                 wincenter=self.db_info["CTwindow_level"][self.labels[single_label]])
@@ -57,13 +65,15 @@ class HDF5Dataset(Dataset):
                 mask = mask_gt
 
             else:
+                crop = self.db_info["crop_scale"]["coarse"]
+                crop_size = (crop, crop)
                 img_coarse = setDicomWinWidthWinCenter(img_data=img,
                                                 winwidth=self.db_info["CTwindow_width"]["coarse"],
                                                 wincenter=self.db_info["CTwindow_level"]["coarse"])
 
             img_coarse = np.uint8(img_coarse)
             img_coarse, mask_gt = preprocess_segmentation(img=img_coarse, mask=mask, scale=self.scale,
-                                                          augmentation=self.augmentation)
+                                                          augmentation=self.augmentation, crop_size=crop_size)
         
         # TESTING and STACKING PREPROCESSING
         # Adjust the level of ct for fine segmentation (all organs in a labels)

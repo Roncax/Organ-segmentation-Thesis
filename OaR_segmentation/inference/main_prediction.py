@@ -12,42 +12,45 @@ from OaR_segmentation.utilities.paths import Paths
 if __name__ == "__main__":
     
     load_models_dir = {
-        "1": "10009/model_best.model",
+        "1": "10018/model_best.model",
         "2": "10011/model_best.model",
-        "3": "10012/model_best.model",
-        "4": "10013/model_best.model",
+        "3": "10025/model_best.model",
+        "4": "1264/model_best.model",
         "5": "10015/model_best.model",
-        "6": "10016/model_best.model",
-        "coarse": "1222/model_best.model"
+        "6": "10034/model_best.model",
+        "coarse": "10007/model_best.model"
     }
     
-    models_type_list = {"1": "unet",
-                        "2": "unet",
-                        "3": "unet",
-                        "4": "unet",
-                        "5": "unet",
-                        "6": "unet",
-                        "coarse": "unet"
+    models_type_list = {
+        "1": "seresunet",
+        "2": "unet",
+        "3": "unet",
+        "4": "unet",
+        "5": "unet",
+        "6": "unet",
+        "coarse": "unet"
                         }
 
     labels = {
         #"0": "Bg",
-        "1": "Esophagus",
-        "2": "Heart",
-        "3": "Trachea",
-        "4": "Aorta"
+        "1": "RightLung",
+        "2": "LeftLung",
+        "3": "Heart",
+        "4": "Trachea",
+        "5": "Esophagus",
+        "6": "SpinalCord"
     }
     
-    db_name = "SegTHOR"
+    db_name = "StructSeg2019_Task3_Thoracic_OAR"
     platform = "local"  # local, colab, polimi
-    load_dir_metamodel = "189/model_latest.model"
+    load_dir_metamodel = "46/model_best.model"
     deeplab_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
-    n_classes = 5   # 1 if binary, n+1 if n organ
+    n_classes = 7   # 1 if binary, n+1 if n organ
     scale = 1
     mask_threshold = 0.5
     channels = 1
-    metrics_list = ['Precision', 'Recall','Dice', 'Hausdorff Distance 95', 'Avg. Surface Distance']
-    stacking_mode = "none" #none, argmax, convolutional
+    metrics_list = ['Hausdorff Distance 95', 'Precision', 'Recall','Dice',  'Avg. Surface Distance']
+    stacking_mode = "argmax" #none, argmax, convolutional
     
     # PATHS management
     paths = Paths(db=db_name, platform=platform)
@@ -58,12 +61,13 @@ if __name__ == "__main__":
     # used for results storage purpose
     dict_test_info = {
         "db": db_name,
+        "fusion_model": load_dir_metamodel if stacking_mode=='convolutional' else 'NA',
         "used_models": load_models_dir,
         "scale": scale,
         "mask_threshold": mask_threshold,
         "segmentation_models": models_type_list,
         "stacking_mode": stacking_mode,
-        "labels": len(labels)
+        "labels": labels
     }
 
     ######## BEGIN INFERENCE ########

@@ -16,6 +16,15 @@
         "5": "Esophagus",
         "6": "SpinalCord"
     },
+    "crop_scale": {
+        "RightLung": 320,
+        "LeftLung": 320,
+        "Heart": 320,
+        "Trachea": 320,
+        "Esophagus": 320,
+        "SpinalCord": 320,
+        "coarse":320
+    },
     "colormap": {
         "0": [
             75,

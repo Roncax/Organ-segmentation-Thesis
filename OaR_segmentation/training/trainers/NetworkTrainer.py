@@ -104,7 +104,7 @@ class NetworkTrainer(object):
 
         ################# Settings for saving checkpoints ##################################
         self.save_every = 10
-        self.save_latest_only = False  # if false it will not store/overwrite _latest but separate files each
+        self.save_latest_only = True  # if false it will not store/overwrite _latest but separate files each
         # time an intermediate checkpoint is created
         self.save_intermediate_checkpoints = True  # whether or not to save checkpoint_latest
         self.save_best_checkpoint = True  # whether or not to save the best checkpoint according to self.best_val_eval_criterion_MA
@@ -520,6 +520,8 @@ class NetworkTrainer(object):
         
         #test purpose
         if viz:
+            if self.network.deep_supervision:
+                output = output[0]
             self.test_viz(output=output,target=target, data_t=data_t)
 
         del target
@@ -609,10 +611,12 @@ class NetworkTrainer(object):
 
     def test_viz(self, output, target, data_t):
         out_t = F.sigmoid(output)
-        out_t = output.clone().detach().squeeze(0).cpu().numpy()
-        out_t = combine_predictions(output_masks=np.delete(out_t, 0, 0), threshold=0.5)
-        
+        out_t = output.clone().detach().squeeze().cpu().numpy().astype(np.float32)
+        # delete bg prediction
+        if self.network.n_classes > 2:
+            out_t = np.delete(out_t, 0, 0)
+        out_t = combine_predictions(output_masks=out_t, threshold=0.5)
         data_t = combine_predictions(output_masks=data_t, threshold=0.5)
         
         target_t = target.clone().detach().squeeze().cpu().numpy()       
-        visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img")
+        visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img.png")

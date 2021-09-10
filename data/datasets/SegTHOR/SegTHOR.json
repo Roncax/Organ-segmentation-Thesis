@@ -14,6 +14,13 @@
         "3": "Trachea",
         "1": "Esophagus"
     },
+        "crop_scale": {
+        "Heart": 320,
+        "Aorta": 320,
+        "Trachea": 320,
+        "Esophagus": 320,
+        "coarse":320
+    },
     "colormap": {
         "0": [
             75,
@@ -50,19 +57,19 @@
     },
     "CTwindow_level": {
         "Bg": 40,
-        "Heart": 40,
-        "Esophagus": 40,
-        "Trachea": 40,
-        "Aorta": 40,
-        "coarse": 40
+        "Heart": 30,
+        "Esophagus": 85,
+        "Trachea": -440,
+        "Aorta": 30,
+        "coarse": -440
     },
     "CTwindow_width": {
         "Bg": 350,
         "Heart": 350,
-        "Esophagus": 350,
-        "Trachea": 350,
+        "Esophagus": 324,
+        "Trachea": 1180,
         "Aorta": 350,
-        "coarse": 350
+        "coarse": 1180
     },
     "numTraining": 32,
     "numTest": 8,

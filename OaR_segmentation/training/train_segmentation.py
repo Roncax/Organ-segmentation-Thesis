@@ -11,8 +11,8 @@ def run_training():
     
     labels = {
         # "1": "Esophagus",
-        "2": "Heart",
-        # "3": "Trachea",
+        # "2": "Heart",
+        "3": "Trachea",
         # "4": "Aorta"
         }
     
@@ -28,12 +28,12 @@ def run_training():
 
     # dice, focal, crossentropy, dc_ce, twersky, jaccard
     loss_criteria = {
-                "1": "twersky",
-                "2": "twersky",
-                "3": "twersky",
-                "4": "twersky",
-                "5": "twersky",
-                "6": "twersky",
+                "1": "crossentropy",
+                "2": "crossentropy",
+                "3": "crossentropy",
+                "4": "crossentropy",
+                "5": "crossentropy",
+                "6": "crossentropy",
                 "coarse": "crossentropy"
                 }
 
@@ -59,7 +59,7 @@ def run_training():
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
     finder_lr_iterations = 2000
-    optimizer = "rmsprop" #adam, rmsprop
+    optimizer = "adam" #adam, rmsprop
     telegram = False
 
 

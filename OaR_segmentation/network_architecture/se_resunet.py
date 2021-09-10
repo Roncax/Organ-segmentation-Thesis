@@ -245,7 +245,7 @@ def build_SeResUNet(channels, n_classes, finetuning, load_dir, device, feature_e
     elif load_inference:
         net = SeResUNet(n_channels=channels, n_classes=n_classes, deep_supervision=False, dropout=False).cuda()
         ckpt = torch.load(load_dir, map_location=device)
-        net.load_state_dict(ckpt['model_state_dict']) #state_dict
+        net.load_state_dict(ckpt['state_dict']) #model_state_dict
 
     else:
         net = SeResUNet(n_channels=channels, n_classes=n_classes, deep_supervision=deep_supervision,

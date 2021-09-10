@@ -11,7 +11,10 @@ from torch.utils.data import DataLoader, random_split
 from tqdm import trange
 import json
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
+
+from  matplotlib import pyplot as plt
 
 def viz_weights(weights, path, epoch):
     
@@ -48,7 +51,7 @@ if __name__ == "__main__":
     paths = Paths(db=db_name, platform=platform)
     loss_criterion = 'crossentropy' # dice, focal, crossentropy, dc_ce
     lr = 0.02
-    patience = 5
+    patience = 20
     batch_size = 1
     scale = 1
     epochs = 500

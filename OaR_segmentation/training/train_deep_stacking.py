@@ -12,20 +12,20 @@ from copy import deepcopy
 if __name__ == "__main__":
     
     load_dir_list = {
-        "1": "10009/model_best.model",
+        "1": "10018/model_best.model",
         "2": "10011/model_best.model",
-        "3": "10012/model_best.model",
-        "4": "10013/model_best.model",
+        "3": "10025/model_best.model",
+        "4": "10040/model_best.model",
         "5": "10015/model_best.model",
-        "6": "10016/model_best.model",
+        "6": "10034/model_best.model",
         "coarse": "931/model_best.model"
     }
 
     models = {
-        "1": "unet",
+        "1": "seresunet",
         "2": "unet",
         "3": "unet",
-        "4": "unet",
+        "4": "seresunet",
         "5": "unet",
         "6": "unet",
         "coarse": "stack_unet"
@@ -48,11 +48,11 @@ if __name__ == "__main__":
     scale = 1
     deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     paths = Paths(db=db_name, platform=platform)
-    loss_criterion = 'crossentropy' # dice, focal, crossentropy, dc_ce
+    loss_criterion = 'crossentropy' # dice, focal, crossentropy, dc_ce, twersky, jaccard
     lr = 1e-3 
     patience = 5
-    deep_supervision = False
-    dropout = False
+    deep_supervision = True
+    dropout = True
     fine_tuning = False
     batch_size = 1
     scale = 1
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         create_combined_dataset(nets=nets, scale=scale, paths=paths, labels=labels)
 
 
-    net = build_net(model='stack_UNet', n_classes=n_classes, channels=channels, load_inference=False)
+    net = build_net(model='stack_UNet', n_classes=n_classes, channels=channels, load_inference=False, deep_supervision=deep_supervision)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                 batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,

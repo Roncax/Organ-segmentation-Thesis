@@ -153,7 +153,8 @@ class Predictor(object):
                 "min": np.min(score[organ]),
                 "max": np.max(score[organ]),
                 "25_quantile": np.quantile(score[organ], q=0.25),
-                "75_quantile": np.quantile(score[organ], q=0.75)
+                "75_quantile": np.quantile(score[organ], q=0.75),
+                "median": np.median(score[organ])
             }
             dict_results[experiment_num][met][organ] = d
             

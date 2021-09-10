@@ -56,7 +56,7 @@ class StackingConvPredictor(Predictor):
             with tqdm(total=len(dataset), unit='img') as pbar:
                 for batch in test_loader:
                     imgs = batch['dict_organs']
-                    mask = batch['mask']
+                    mask = batch['mask_gt']
                     id = batch['id']
                     
                     final_array_prediction = None
@@ -90,10 +90,10 @@ class StackingConvPredictor(Predictor):
                     probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
 
                     # TESTING
-                    mask = mask.squeeze().cpu().numpy()
-                    test = final_array_prediction.squeeze().cpu().numpy()
-                    test = self.combine_predictions(output_masks=np.flip(test, axis=0))
-                    visualize(image=probs, mask=test, additional_1=mask, additional_2=mask, file_name='temp_img/x')
+                    # mask = mask.squeeze().cpu().numpy()
+                    # test = final_array_prediction.squeeze().cpu().numpy()
+                    # test = self.combine_predictions(output_masks=np.flip(test, axis=0))
+                    # visualize(image=probs, mask=test, additional_1=mask, additional_2=mask, file_name='temp_img/x')
                     
                     db.create_dataset(id[0], data=probs)    #  add the calculated image in the hdf5 results file
                     pbar.update(img.shape[0])   # update the pbar by number of imgs in batch

@@ -9,7 +9,7 @@ import json
 
 def create_combined_dataset(scale, nets,  paths, labels):
     dataset = HDF5Dataset(scale=scale, mode='test', db_info=json.load(open(paths.json_file_database)), 
-                          hdf5_db_dir=paths.hdf5_db, channels=1, labels=labels)
+                          hdf5_db_dir=paths.hdf5_db, channels=1, labels=labels,db_set_train=True)
     
     test_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
 
