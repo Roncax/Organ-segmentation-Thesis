@@ -63,6 +63,8 @@ class StackingArgmaxPredictor(Predictor):
                         else:
                             final_array_prediction = torch.cat((final_array_prediction, output), dim=1)
 
+                    if self.logistic_regression_weights:
+                        final_array_prediction = self.apply_logistic_weights(final_array_prediction)
                     probs = final_array_prediction
                     #probs = torch.sigmoid(probs)
                     full_mask = probs.squeeze().cpu().numpy()

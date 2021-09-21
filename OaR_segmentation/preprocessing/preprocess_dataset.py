@@ -34,11 +34,11 @@ def preprocess_segmentation(img, mask, scale, augmentation, crop_size = None):
         transform = A.Compose([
             A.ElasticTransform(p=0.5, alpha=120 * 0.25, sigma=120 * 0.05, alpha_affine=120 * 0.05),
             A.GridDistortion(p=0.5),
-            A.RandomScale(scale_limit=0.05, p=0.5),
+            #A.RandomScale(scale_limit=0.05, p=0.5),
             A.Rotate(limit=10, p=0.5),
             # A.ShiftScaleRotate(shift_limit=0, scale_limit=0.1, rotate_limit=10, p=0.5),
             # A.Blur(blur_limit=7, always_apply=False, p=0.5),
-            #A.GaussNoise(var_limit=(0, 10), always_apply=False, p=0.5),
+            #A.GaussNoise(var_limit=(0, 10), p=0.5),
         ])
 
         transformed = transform(image=img, mask=mask)

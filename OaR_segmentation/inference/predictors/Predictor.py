@@ -1,9 +1,13 @@
+from torch import nn
+from torch.nn import functional
+from OaR_segmentation.network_architecture.logistic_regression_stacking import LogisticRegression
 from abc import abstractmethod
 import json
 import logging
 import h5py
 from tqdm import tqdm
 import numpy as np
+import torch
 
 from OaR_segmentation.utilities.build_volume import grayscale2rgb_mask
 from OaR_segmentation.utilities.data_vis import prediction_plot, volume2gif, plot_single_result, boxplot_plotly
@@ -13,12 +17,13 @@ from OaR_segmentation.evaluation.metrics import ConfusionMatrix
 
 
 class Predictor(object):
-    def __init__(self, scale, mask_threshold, paths, labels, n_classes):
+    def __init__(self, scale, mask_threshold, paths, labels, n_classes, logistic_regression_weights):
         self.scale = scale
         self.mask_threshold = mask_threshold
         self.paths = paths
         self.labels = labels
         self.n_classes = n_classes
+        self.logistic_regression_weights = logistic_regression_weights
     
     @abstractmethod
     def initialize(self):
@@ -166,3 +171,17 @@ class Predictor(object):
         json.dump(dict_experiments_settings, open(path_settings, "w"))
         return score
 
+
+    def apply_logistic_weights(self, img):
+        
+        net = LogisticRegression(input_size=512*512, n_classes=self.n_classes)
+        net = net.to(device='cuda')
+        ckpt = torch.load(self.paths.dir_logreg, map_location='cuda')
+        net.load_state_dict(ckpt['state_dict'])
+        weights = net.linear.weight.clone()
+        
+        img = img*(torch.nn.functional.functional.normalize(weights))
+        #img = torch.tensor [C, H, W]
+        # caricare modello logistico
+        #moltiplicare modello logistico per ogni organo (da normalizzare prima)
+        return img

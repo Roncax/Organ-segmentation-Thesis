@@ -77,13 +77,14 @@ class OutConv(nn.Module):
 
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True, deep_supervision=False):
+    def __init__(self, n_channels, n_classes, bilinear=True, deep_supervision=False, lastlayer_fusion = False):
         super(UNet, self).__init__()
         self.deep_supervision = deep_supervision
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
         self.name = "Unet"
+        self.lastlayer_fusion = lastlayer_fusion
 
         self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
@@ -121,7 +122,7 @@ class UNet(nn.Module):
             x44 = F.interpolate(self.dsoutc4(x44), x0.shape[2:], mode='bilinear')
             return x0, x11, x22, x33, x44
         else:
-            return x0
+            return x0 if self.lastlayer_fusion == False else x11
 
 
 def set_parameter_requires_grad(model):
@@ -130,7 +131,7 @@ def set_parameter_requires_grad(model):
 
 
 def build_unet(channels, n_classes, finetuning, load_dir, device, feature_extraction, old_classes, load_inference,
-               deep_supervision):
+               deep_supervision, lastlayer_fusion):
     if finetuning or feature_extraction:
         net = UNet(n_channels=channels, n_classes=old_classes, bilinear=True,
                    deep_supervision=deep_supervision).cuda()
@@ -141,7 +142,7 @@ def build_unet(channels, n_classes, finetuning, load_dir, device, feature_extrac
         net.outc = OutConv(64, n_classes)
 
     elif load_inference:
-        net = UNet(n_channels=channels, n_classes=n_classes, bilinear=True).cuda()
+        net = UNet(n_channels=channels, n_classes=n_classes, bilinear=True, lastlayer_fusion=lastlayer_fusion).cuda()
         ckpt = torch.load(load_dir, map_location=device)
         net.load_state_dict(ckpt['state_dict'])
 

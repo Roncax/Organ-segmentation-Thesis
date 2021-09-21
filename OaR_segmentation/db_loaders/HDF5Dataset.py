@@ -1,6 +1,7 @@
 import h5py
 import numpy as np
 import torch
+from torch._C import device
 from OaR_segmentation.preprocessing.ct_levels_enhance import setDicomWinWidthWinCenter
 from OaR_segmentation.preprocessing.preprocess_dataset import *
 from torch.utils.data import Dataset
@@ -8,7 +9,7 @@ from torch.utils.data import Dataset
 
 class HDF5Dataset(Dataset):
     def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  
-                 channels, augmentation=False, multiclass_test = False, db_set_train=False):
+                 channels, augmentation=False, multiclass_test = False, db_set_train=False, lastlayer_fusion=False):
         self.db_info = db_info
         self.labels = labels
         self.db_dir = hdf5_db_dir
@@ -17,6 +18,7 @@ class HDF5Dataset(Dataset):
         self.augmentation = augmentation
         self.channels = channels
         self.multiclass_test = multiclass_test
+        self.lastlayer_fusion = lastlayer_fusion
 
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
         
@@ -52,7 +54,7 @@ class HDF5Dataset(Dataset):
         mask_gt = np.zeros(shape=mask.shape, dtype=int)
         
         # TRAINING PREPROCESSING
-        if self.mode == "train":
+        if self.mode == "train" and not self.lastlayer_fusion:
             if len(self.labels.items()) == 1:
 
                 single_label = next(iter(self.labels))
@@ -78,6 +80,33 @@ class HDF5Dataset(Dataset):
         # TESTING and STACKING PREPROCESSING
         # Adjust the level of ct for fine segmentation (all organs in a labels)
         elif self.mode == "test":
+            # Adjust the level of ct for coarse segmentation
+            img_coarse = setDicomWinWidthWinCenter(img_data=img, winwidth=self.db_info["CTwindow_width"]["coarse"],
+                                                   wincenter=self.db_info["CTwindow_level"]["coarse"])
+            img_coarse = np.uint8(img_coarse)
+            
+            if self.multiclass_test:
+                mask_gt = mask
+                #empty img_dict
+            else:
+                for key in self.labels.keys():
+                    img_single_organ = setDicomWinWidthWinCenter(img_data=img,
+                                                                winwidth=self.db_info["CTwindow_width"][self.labels[key]],
+                                                                wincenter=self.db_info["CTwindow_level"][self.labels[key]])
+                    img_single_organ = np.uint8(img_single_organ)
+                    img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale)
+                    img_single_organ = torch.from_numpy(img_single_organ).type(torch.FloatTensor)
+                    img_dict[key] = img_single_organ
+                    
+                    # Create the ground truth mask 
+                    mask_gt[mask == int(key)] = key
+
+            # Some preprocessing to the images
+            img_coarse, mask_gt = prepare_inference(img=img_coarse, mask=mask_gt, scale=self.scale)
+            
+       # LAST LAYER FUSION
+        # Adjust the level of ct for fine segmentation (all organs in a labels)
+        elif self.lastlayer_fusion:
             # Adjust the level of ct for coarse segmentation
             img_coarse = setDicomWinWidthWinCenter(img_data=img, winwidth=self.db_info["CTwindow_width"]["coarse"],
                                                    wincenter=self.db_info["CTwindow_level"]["coarse"])

@@ -19,9 +19,15 @@ def eval_train(net, loader, device):
     with tqdm(total=n_val, desc='Real validation round', unit='batch', leave=False) as pbar:
         # iterate over all val batch
         for batch in loader:
-            imgs = batch['image_coarse']
+            if net.name == 'LastLayerFusionNet':
+                imgs=batch['dict_organs']
+                for key in imgs.keys():
+                    imgs[key] = imgs[key].to(device=device, dtype=torch.float32)
+            else:
+                imgs = batch['image_coarse']
+                imgs = imgs.to(device=device, dtype=torch.float32)
+                
             true_masks = batch['mask_gt']
-            imgs = imgs.to(device=device, dtype=torch.float32)
             true_masks = true_masks.to(device=device, dtype=mask_type)
 
             with torch.no_grad():

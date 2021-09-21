@@ -167,7 +167,7 @@ class SeResUNet(nn.Module):
 
             return x0, x11, x22, x33, x44
         else:
-            return x0
+            return x0 if self.lastlayer_fusion == False else x11
 
 
 class Shallow_SeResUNet(nn.Module):
@@ -232,7 +232,7 @@ def set_parameter_requires_grad(model):
 
 
 def build_SeResUNet(channels, n_classes, finetuning, load_dir, device, feature_extraction, old_classes,
-                    load_inference, dropout, deep_supervision):
+                    load_inference, dropout, deep_supervision, lastlayer_fusion):
     if finetuning or feature_extraction:
         net = SeResUNet(n_channels=channels, n_classes=old_classes, deep_supervision=deep_supervision,
                         dropout=dropout).cuda()
@@ -252,5 +252,6 @@ def build_SeResUNet(channels, n_classes, finetuning, load_dir, device, feature_e
                         dropout=dropout).cuda()
 
     net.n_classes = n_classes
+    net.lastlayer_fusion = lastlayer_fusion
 
     return net.to(device=device)

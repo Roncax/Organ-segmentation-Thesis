@@ -10,10 +10,12 @@ from copy import deepcopy
 def run_training():
     
     labels = {
-        # "1": "Esophagus",
-        # "2": "Heart",
-        "3": "Trachea",
-        # "4": "Aorta"
+        "1": "RightLung",
+        "2": "LeftLung",
+        "3": "Heart",
+        "4": "Trachea",
+        "5": "Esophagus",
+        "6": "SpinalCord"
         }
     
     load_dir_list = {
@@ -37,24 +39,23 @@ def run_training():
                 "coarse": "crossentropy"
                 }
 
-    model = "unet"   #seresunet, unet, segnet, deeplabv3
-    db_name = "SegTHOR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
+    model = "deeplabv3"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
+    db_name = "StructSeg2019_Task3_Thoracic_OAR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     epochs = 500  
-    batch_size = 1  
+    batch_size = 2  # (>2 mandatory for deeplabv3)
     lr = 1e-3
     val = 0.20  
     patience = 5  
     fine_tuning = False 
     feature_extraction = False  
     augmentation = True  
-    deep_supervision = True  #only unet and seresunet
+    deep_supervision = False  #only unet and seresunet
     dropout = True  #deeplav3 builded in, unet and seresunet only (segnet not supported)
     scale = 1 
     channels = 1 # used for multi-channel 3d method (forse problemi con deeplab)
     multi_loss_weights = [1, 1] # [ce, dice]
-    deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     platform = "local"  # local, gradient, polimi
-    n_classes = 1   # 1 if binary, n+1 if n organ
+    n_classes = 7   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
@@ -83,7 +84,7 @@ def run_training():
     # BEGIN TRAINING
     net = build_net(model=model, n_classes=n_classes, finetuning=fine_tuning, load_dir=paths.dir_pretrained_model,
                     channels=channels, old_classes=old_classes, feature_extraction=feature_extraction,
-                    dropout=dropout, deep_supervision=deep_supervision, backbone=deeplabv3_backbone)
+                    dropout=dropout, deep_supervision=deep_supervision)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                 batch_size=batch_size, loss_criterion=loss_criterion, val_percent=val,

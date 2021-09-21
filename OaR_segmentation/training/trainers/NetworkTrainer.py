@@ -59,6 +59,7 @@ class NetworkTrainer(object):
         self.lr_scheduler = None
         self.tr_gen = self.val_gen = None
         self.was_initialized = False
+        self.lastlayer_fusion = False
 
         ################# SET THESE IN INIT ################################################
         self.output_folder = None
@@ -473,14 +474,26 @@ class NetworkTrainer(object):
                                  self.all_tr_losses[-1]
 
     def run_iteration(self, data_dict, do_backprop=True, run_online_evaluation=False, viz = False):
-        data = data_dict['image_coarse']
+        
+        data = data_dict['dict_organs'] if self.lastlayer_fusion else data_dict['image_coarse']
+        
         target = data_dict['mask_gt']
 
-        data = maybe_to_torch(data)
+        
+        if not self.lastlayer_fusion:
+            data = maybe_to_torch(data)
+        else:
+            for key in data.keys():
+                data[key] = maybe_to_torch(data[key])
+                    
         target = maybe_to_torch(target)
 
         if torch.cuda.is_available():
-            data = to_cuda(data)
+            if not self.lastlayer_fusion:
+                data = to_cuda(data)
+            else:
+                for key in data.keys():
+                    data[key] = to_cuda(data[key])
             target = to_cuda(target)
 
         if self.network.n_classes > 1:
@@ -497,7 +510,7 @@ class NetworkTrainer(object):
             with autocast():
                 output = self.network(data)
                 
-                data_t = data.clone().detach().squeeze().cpu().numpy()
+                #data_t = data.clone().detach().squeeze().cpu().numpy()
                 del data
                 l = self.loss(output, target)
 
@@ -522,7 +535,7 @@ class NetworkTrainer(object):
         if viz:
             if self.network.deep_supervision:
                 output = output[0]
-            self.test_viz(output=output,target=target, data_t=data_t)
+            #self.test_viz(output=output,target=target, data_t=data_t)
 
         del target
 

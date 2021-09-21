@@ -116,5 +116,13 @@
         "Patient_20",
         "Patient_04",
         "Patient_24"
+    ],
+    "train_reduced": [
+        "Patient_19",
+        "Patient_34",
+        "Patient_17",
+        "Patient_20",
+        "Patient_04",
+        "Patient_24"
     ]
 }

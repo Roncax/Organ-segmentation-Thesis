@@ -1,134 +1,119 @@
-import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from collections import OrderedDict
+import torch
 
 
 class SegNet(nn.Module):
-    def __init__(self, input_nbr, label_nbr):
+    """SegNet: A Deep Convolutional Encoder-Decoder Architecture for
+    Image Segmentation. https://arxiv.org/abs/1511.00561
+    See https://github.com/alexgkendall/SegNet-Tutorial for original models.
+    Args:
+        num_classes (int): number of classes to segment
+        n_init_features (int): number of input features in the fist convolution
+        drop_rate (float): dropout rate of each encoder/decoder module
+        filter_config (list of 5 ints): number of output features at each level
+    """
+    def __init__(self, num_classes, n_init_features=1, drop_rate=0.5,
+                 filter_config=(64, 128, 256, 512, 512)):
         super(SegNet, self).__init__()
 
-        batchNorm_momentum = 0.1
+        self.encoders = nn.ModuleList()
+        self.decoders = nn.ModuleList()
+        # setup number of conv-bn-relu blocks per module and number of filters
+        encoder_n_layers = (2, 2, 3, 3, 3)
+        encoder_filter_config = (n_init_features,) + filter_config
+        decoder_n_layers = (3, 3, 3, 2, 1)
+        decoder_filter_config = filter_config[::-1] + (filter_config[0],)
 
-        self.conv11 = nn.Conv2d(input_nbr, 64, kernel_size=3, padding=1)
-        self.bn11 = nn.BatchNorm2d(64, momentum=batchNorm_momentum)
-        self.conv12 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.bn12 = nn.BatchNorm2d(64, momentum=batchNorm_momentum)
+        for i in range(0, 5):
+            # encoder architecture
+            self.encoders.append(_Encoder(encoder_filter_config[i],
+                                          encoder_filter_config[i + 1],
+                                          encoder_n_layers[i], drop_rate))
 
-        self.conv21 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.bn21 = nn.BatchNorm2d(128, momentum=batchNorm_momentum)
-        self.conv22 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
-        self.bn22 = nn.BatchNorm2d(128, momentum=batchNorm_momentum)
+            # decoder architecture
+            self.decoders.append(_Decoder(decoder_filter_config[i],
+                                          decoder_filter_config[i + 1],
+                                          decoder_n_layers[i], drop_rate))
 
-        self.conv31 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
-        self.bn31 = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-        self.conv32 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.bn32 = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-        self.conv33 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.bn33 = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-
-        self.conv41 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
-        self.bn41 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv42 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn42 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv43 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn43 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-
-        self.conv51 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn51 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv52 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn52 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv53 = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn53 = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-
-        self.conv53d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn53d = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv52d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn52d = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv51d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn51d = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-
-        self.conv43d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn43d = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv42d = nn.Conv2d(512, 512, kernel_size=3, padding=1)
-        self.bn42d = nn.BatchNorm2d(512, momentum=batchNorm_momentum)
-        self.conv41d = nn.Conv2d(512, 256, kernel_size=3, padding=1)
-        self.bn41d = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-
-        self.conv33d = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.bn33d = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-        self.conv32d = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.bn32d = nn.BatchNorm2d(256, momentum=batchNorm_momentum)
-        self.conv31d = nn.Conv2d(256, 128, kernel_size=3, padding=1)
-        self.bn31d = nn.BatchNorm2d(128, momentum=batchNorm_momentum)
-
-        self.conv22d = nn.Conv2d(128, 128, kernel_size=3, padding=1)
-        self.bn22d = nn.BatchNorm2d(128, momentum=batchNorm_momentum)
-        self.conv21d = nn.Conv2d(128, 64, kernel_size=3, padding=1)
-        self.bn21d = nn.BatchNorm2d(64, momentum=batchNorm_momentum)
-
-        self.conv12d = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.bn12d = nn.BatchNorm2d(64, momentum=batchNorm_momentum)
-        self.conv11d = nn.Conv2d(64, label_nbr, kernel_size=3, padding=1)
+        # final classifier (equivalent to a fully connected layer)
+        self.classifier = nn.Conv2d(filter_config[0], num_classes, 3, 1, 1)
 
     def forward(self, x):
-        # Stage 1
-        x11 = F.relu(self.bn11(self.conv11(x)))
-        x12 = F.relu(self.bn12(self.conv12(x11)))
-        x1p, id1 = F.max_pool2d(x12, kernel_size=2, stride=2, return_indices=True)
+        indices = []
+        unpool_sizes = []
+        feat = x
 
-        # Stage 2
-        x21 = F.relu(self.bn21(self.conv21(x1p)))
-        x22 = F.relu(self.bn22(self.conv22(x21)))
-        x2p, id2 = F.max_pool2d(x22, kernel_size=2, stride=2, return_indices=True)
+        # encoder path, keep track of pooling indices and features size
+        for i in range(0, 5):
+            (feat, ind), size = self.encoders[i](feat)
+            indices.append(ind)
+            unpool_sizes.append(size)
 
-        # Stage 3
-        x31 = F.relu(self.bn31(self.conv31(x2p)))
-        x32 = F.relu(self.bn32(self.conv32(x31)))
-        x33 = F.relu(self.bn33(self.conv33(x32)))
-        x3p, id3 = F.max_pool2d(x33, kernel_size=2, stride=2, return_indices=True)
+        # decoder path, upsampling with corresponding indices and size
+        for i in range(0, 5):
+            feat = self.decoders[i](feat, indices[4 - i], unpool_sizes[4 - i])
 
-        # Stage 4
-        x41 = F.relu(self.bn41(self.conv41(x3p)))
-        x42 = F.relu(self.bn42(self.conv42(x41)))
-        x43 = F.relu(self.bn43(self.conv43(x42)))
-        x4p, id4 = F.max_pool2d(x43, kernel_size=2, stride=2, return_indices=True)
+        return self.classifier(feat) if self.lastlayer_fusion == False else feat 
 
-        # Stage 5
-        x51 = F.relu(self.bn51(self.conv51(x4p)))
-        x52 = F.relu(self.bn52(self.conv52(x51)))
-        x53 = F.relu(self.bn53(self.conv53(x52)))
-        x5p, id5 = F.max_pool2d(x53, kernel_size=2, stride=2, return_indices=True)
 
-        # Stage 5d
-        x5d = F.max_unpool2d(x5p, id5, kernel_size=2, stride=2)
-        x53d = F.relu(self.bn53d(self.conv53d(x5d)))
-        x52d = F.relu(self.bn52d(self.conv52d(x53d)))
-        x51d = F.relu(self.bn51d(self.conv51d(x52d)))
+class _Encoder(nn.Module):
+    def __init__(self, n_in_feat, n_out_feat, n_blocks=2, drop_rate=0.5):
+        """Encoder layer follows VGG rules + keeps pooling indices
+        Args:
+            n_in_feat (int): number of input features
+            n_out_feat (int): number of output features
+            n_blocks (int): number of conv-batch-relu block inside the encoder
+            drop_rate (float): dropout rate to use
+        """
+        super(_Encoder, self).__init__()
 
-        # Stage 4d
-        x4d = F.max_unpool2d(x51d, id4, kernel_size=2, stride=2)
-        x43d = F.relu(self.bn43d(self.conv43d(x4d)))
-        x42d = F.relu(self.bn42d(self.conv42d(x43d)))
-        x41d = F.relu(self.bn41d(self.conv41d(x42d)))
+        layers = [nn.Conv2d(n_in_feat, n_out_feat, 3, 1, 1),
+                  nn.BatchNorm2d(n_out_feat),
+                  nn.ReLU(inplace=True)]
 
-        # Stage 3d
-        x3d = F.max_unpool2d(x41d, id3, kernel_size=2, stride=2)
-        x33d = F.relu(self.bn33d(self.conv33d(x3d)))
-        x32d = F.relu(self.bn32d(self.conv32d(x33d)))
-        x31d = F.relu(self.bn31d(self.conv31d(x32d)))
+        if n_blocks > 1:
+            layers += [nn.Conv2d(n_out_feat, n_out_feat, 3, 1, 1),
+                       nn.BatchNorm2d(n_out_feat),
+                       nn.ReLU(inplace=True)]
+            if n_blocks == 3:
+                layers += [nn.Dropout(drop_rate)]
 
-        # Stage 2d
-        x2d = F.max_unpool2d(x31d, id2, kernel_size=2, stride=2)
-        x22d = F.relu(self.bn22d(self.conv22d(x2d)))
-        x21d = F.relu(self.bn21d(self.conv21d(x22d)))
+        self.features = nn.Sequential(*layers)
 
-        # Stage 1d
-        x1d = F.max_unpool2d(x21d, id1, kernel_size=2, stride=2)
-        x12d = F.relu(self.bn12d(self.conv12d(x1d)))
-        x11d = self.conv11d(x12d)
+    def forward(self, x):
+        output = self.features(x)
+        return F.max_pool2d(output, 2, 2, return_indices=True), output.size()
 
-        return x11d
+
+class _Decoder(nn.Module):
+    """Decoder layer decodes the features by unpooling with respect to
+    the pooling indices of the corresponding decoder part.
+    Args:
+        n_in_feat (int): number of input features
+        n_out_feat (int): number of output features
+        n_blocks (int): number of conv-batch-relu block inside the decoder
+        drop_rate (float): dropout rate to use
+    """
+    def __init__(self, n_in_feat, n_out_feat, n_blocks=2, drop_rate=0.5):
+        super(_Decoder, self).__init__()
+
+        layers = [nn.Conv2d(n_in_feat, n_in_feat, 3, 1, 1),
+                  nn.BatchNorm2d(n_in_feat),
+                  nn.ReLU(inplace=True)]
+
+        if n_blocks > 1:
+            layers += [nn.Conv2d(n_in_feat, n_out_feat, 3, 1, 1),
+                       nn.BatchNorm2d(n_out_feat),
+                       nn.ReLU(inplace=True)]
+            if n_blocks == 3:
+                layers += [nn.Dropout(drop_rate)]
+
+        self.features = nn.Sequential(*layers)
+
+    def forward(self, x, indices, size):
+        unpooled = F.max_unpool2d(x, indices, 2, 2, 0, size)
+        return self.features(unpooled)
 
 
 def set_parameter_requires_grad(model):
@@ -136,9 +121,10 @@ def set_parameter_requires_grad(model):
         param.requires_grad = False
 
 
-def build_segnet(channels, n_classes, finetuning, load_dir, device, feature_extraction, old_classes, load_inference):
+def build_segnet(channels, n_classes, finetuning, load_dir, device, 
+                 feature_extraction, old_classes, load_inference, lastlayer_fusion):
     if finetuning or feature_extraction:
-        net = SegNet(input_nbr=channels, label_nbr=old_classes).cuda()
+        net = SegNet(num_classes=n_classes).cuda()
         ckpt = torch.load(load_dir, map_location=device)
         net.load_state_dict(ckpt['state_dict'])
         if feature_extraction:
@@ -146,15 +132,16 @@ def build_segnet(channels, n_classes, finetuning, load_dir, device, feature_extr
         net.conv11d = nn.Conv2d(64, n_classes, kernel_size=3, padding=1)
 
     elif load_inference:
-        net = SegNet(input_nbr=channels, label_nbr=n_classes).cuda()
+        net = SegNet(num_classes=n_classes).cuda()
         ckpt = torch.load(load_dir, map_location=device)
         net.load_state_dict(ckpt['state_dict'])
 
     else:
-        net = SegNet(input_nbr=channels, label_nbr=n_classes).cuda()
+        net = SegNet(num_classes=n_classes).cuda()
 
     net.n_classes = n_classes
     net.name = "SegNet"
     net.n_channels = channels
-
+    net.lastlayer_fusion = lastlayer_fusion
+    
     return net.to(device=device)

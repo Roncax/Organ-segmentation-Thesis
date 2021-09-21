@@ -58,6 +58,8 @@ class StandardPredictor(Predictor):
 
                     full_mask = probs.squeeze().cpu().numpy()
 
+                    if self.logistic_regression_weights:
+                        full_mask = self.apply_logistic_weights(full_mask)
                     if self.net.n_classes > 1:
                         res = self.combine_predictions(output_masks=np.delete(full_mask, 0, 0))
                     else:

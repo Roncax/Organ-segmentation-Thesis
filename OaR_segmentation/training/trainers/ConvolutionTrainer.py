@@ -7,6 +7,8 @@ from torch.utils.tensorboard import SummaryWriter
 
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 from OaR_segmentation.db_loaders.HDF5DatasetStacking import HDF5DatasetStacking
+from OaR_segmentation.db_loaders.HDF5lastlayer import HDF5lastlayer
+
 
 from OaR_segmentation.training.loss_factory import build_loss
 from OaR_segmentation.training.trainers.NetworkTrainer import NetworkTrainer
@@ -15,8 +17,8 @@ from OaR_segmentation.evaluation import evaluation
 import telegram_send
 
 class ConvolutionTrainer(NetworkTrainer):
-    def __init__(self, paths, image_scale, augmentation, batch_size, loss_criterion, val_percent, labels, network, deep_supervision,
-                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, telegram,  stacking = False, deterministic=False,
+    def __init__(self, paths, image_scale, augmentation, batch_size, loss_criterion, val_percent, labels, network, 
+                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, lastlayer_fusion=False, telegram=False, deep_supervision = False, stacking = False, deterministic=False,
                  fp16=True):
         super(ConvolutionTrainer, self).__init__(deterministic=deterministic, fp16=fp16)
 
@@ -42,6 +44,7 @@ class ConvolutionTrainer(NetworkTrainer):
         self.batch_size = batch_size
         self.val_percent = val_percent
         self.stacking = stacking
+        self.lastlayer_fusion = lastlayer_fusion
 
         self.info_dict = None
         self.experiment_number = None
@@ -121,11 +124,15 @@ class ConvolutionTrainer(NetworkTrainer):
             self.dataset = HDF5DatasetStacking(scale=self.img_scale, hdf5_db_dir=self.paths.hdf5_stacking,
                                     labels=self.labels, augmentation=self.augmentation, 
                                     channels=self.network.n_channels)
-                   
+        if self.lastlayer_fusion:
+            self.dataset = HDF5lastlayer(scale=self.img_scale, mode='train',
+                                    db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
+                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels, lastlayer_fusion=self.lastlayer_fusion)
+
         else:
             self.dataset = HDF5Dataset(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
-                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels)
+                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels, lastlayer_fusion=self.lastlayer_fusion)
 
         n_val = int(len(self.dataset) * self.val_percent)
         n_train = len(self.dataset) - n_val
@@ -200,7 +207,7 @@ class ConvolutionTrainer(NetworkTrainer):
         
     
 
-    def setup_info_dict(self, pretrained_model, dropout, feature_extraction, fine_tuning, used_output_models = None):
+    def setup_info_dict(self, pretrained_model='NA', dropout = 'NA', feature_extraction = 'NA', fine_tuning = 'NA', used_output_models = None):
         self.info_dict = {
             self.experiment_number: {
                 "dataset": self.dataset_name,
