@@ -14,9 +14,9 @@ from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 
 class StandardPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes):
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
         super(StandardPredictor, self).__init__(
-            scale=scale, mask_threshold=mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+            scale=scale, mask_threshold=mask_threshold,  paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         self.net = None
         self.channels = None
 
@@ -60,6 +60,7 @@ class StandardPredictor(Predictor):
 
                     if self.logistic_regression_weights:
                         full_mask = self.apply_logistic_weights(full_mask)
+                        
                     if self.net.n_classes > 1:
                         res = self.combine_predictions(output_masks=np.delete(full_mask, 0, 0))
                     else:

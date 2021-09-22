@@ -12,8 +12,10 @@ from OaR_segmentation.utilities.data_vis import visualize
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class StackingConvPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes):
-        super(StackingConvPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+        super(StackingConvPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,
+                                                    paths=paths, labels=labels, n_classes=n_classes
+                                                    , logistic_regression_weights=logistic_regression_weights)
         self.nets = None
         self.meta_net = None
         self.channels = None

@@ -12,8 +12,9 @@ from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 
 class StackingArgmaxPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes):
-        super(StackingArgmaxPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+        super(StackingArgmaxPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  
+                                                      paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         self.nets = None
         self.channels = None
         
@@ -67,7 +68,7 @@ class StackingArgmaxPredictor(Predictor):
                         final_array_prediction = self.apply_logistic_weights(final_array_prediction)
                     probs = final_array_prediction
                     #probs = torch.sigmoid(probs)
-                    full_mask = probs.squeeze().cpu().numpy()
+                    full_mask = probs.squeeze().cpu().detach().numpy()
                     comb_img = self.combine_predictions(output_masks=full_mask)
                     
                     

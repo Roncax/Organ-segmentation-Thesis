@@ -23,7 +23,7 @@ def viz_weights(weights, path, epoch):
         scale = np.max(np.abs(weights[i]))
         p = plt.subplot(1, n_classes, i + 1)
         p = plt.imshow(weights[i].reshape(512, 512),
-                    cmap=plt.cm.RdBu, vmin=-scale, vmax=scale)
+                    cmap=plt.cm.RdBu, vmin=0, vmax=scale)
         p = plt.axis('off')
         p = plt.title('Class %i' % i)
     #plt.show()
@@ -128,11 +128,12 @@ if __name__ == "__main__":
         current_eval_loss = result['val_loss']
         if epoch == 0:
             best_eval_loss = current_eval_loss
-            net.save_checkpoint(path=f'{paths.dir_checkpoint}/best_model.model')
+                        
+            torch.save({'state_dict': net.state_dict()},f'{paths.dir_checkpoint}/best_model.model')
 
         else:
             if current_eval_loss < best_eval_loss:
-                net.save_checkpoint(path=f'{paths.dir_checkpoint}/best_model.model')
+                torch.save({'state_dict': net.state_dict()},f'{paths.dir_checkpoint}/best_model.model')
                 best_eval_loss = current_eval_loss
                 patience_count = 0
             else:

@@ -49,9 +49,9 @@ if __name__ == "__main__":
     mask_threshold = 0.5
     channels = 1
     metrics_list =['Dice']#[ 'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
-    stacking_mode = "lastlayer_fusion" #none, argmax, convolutional
-    logistic_regression_weights = True
-    logistic_regression_dir = '5/best_model.model'
+    stacking_mode = "argmax" #none, argmax, convolutional
+    logistic_regression_weights = False
+    logistic_regression_dir = '12/best_model.model'
     
     # PATHS management
     paths = Paths(db=db_name, platform=platform)
@@ -69,27 +69,31 @@ if __name__ == "__main__":
         "mask_threshold": mask_threshold,
         "segmentation_models": models_type_list,
         "stacking_mode": stacking_mode,
-        "labels": labels
+        "labels": labels,
+        "logistic_regression_weights": logistic_regression_dir if logistic_regression_weights else 'NA'
     }
 
     ######## BEGIN INFERENCE ########
     # standard multiclass
     if stacking_mode == "none":
-        predictor = StandardPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+        predictor = StandardPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, 
+                                      labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, models_type_list=models_type_list, deeplab_backbone=deeplab_backbone)
        
     elif stacking_mode == "argmax":
-        predictor = StackingArgmaxPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+        predictor = StackingArgmaxPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, 
+                                            labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, models_type_list=models_type_list)
         
     elif stacking_mode == "convolutional":
-        predictor = StackingConvPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+        predictor = StackingConvPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, 
+                                          labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, load_dir_metamodel=load_dir_metamodel, models_type_list=models_type_list)
     
     elif stacking_mode == "lastlayer_fusion":
-        predictor = LastLayerPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+        predictor = LastLayerPredictor(scale = scale, mask_threshold = mask_threshold,  paths=paths, 
+                                       labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         predictor.initialize(load_models_dir=load_models_dir, channels=channels, load_dir_metamodel=load_dir_metamodel, models_type_list=models_type_list)
-        
         
     predictor.predict()
     predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], experiment_num=experiment_num, dict_test_info=dict_test_info)

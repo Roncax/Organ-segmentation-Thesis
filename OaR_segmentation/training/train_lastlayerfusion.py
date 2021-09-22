@@ -19,7 +19,7 @@ def run_training():
         }
     
     load_dir_list = {
-                "1": "1048/model_best.model",
+                "1": "10018/model_best.model",
                 "2": "1049/model_best.model",
                 "3": "1051/model_best.model",
                 "4": "1052/model_best.model",
@@ -28,7 +28,7 @@ def run_training():
                 }
     
     models_type_list = {
-                "1": "unet",
+                "1": "seresunet",
                 "2": "unet",
                 "3": "unet",
                 "4": "unet",
@@ -56,7 +56,7 @@ def run_training():
     patience = 5  
     augmentation = True  
     scale = 1 
-    channels = 1 # used for multi-channel 3d method (forse problemi con deeplab)
+    channels = 1 
     multi_loss_weights = [1, 1] # [ce, dice]
     platform = "local"  # local, gradient, polimi
     n_classes = 7   # 1 if binary, n+1 if n organ

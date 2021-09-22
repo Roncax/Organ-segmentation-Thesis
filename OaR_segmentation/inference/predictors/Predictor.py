@@ -1,4 +1,5 @@
 from torch import nn
+from torch._C import device
 from torch.nn import functional
 from OaR_segmentation.network_architecture.logistic_regression_stacking import LogisticRegression
 from abc import abstractmethod
@@ -173,15 +174,25 @@ class Predictor(object):
 
 
     def apply_logistic_weights(self, img):
-        
-        net = LogisticRegression(input_size=512*512, n_classes=self.n_classes)
+        #img = torch.tensor [N, C, H, W]
+        #todo sistemare prediction del bg
+        net = LogisticRegression(input_size=512*512, n_classes=self.n_classes-1)
         net = net.to(device='cuda')
         ckpt = torch.load(self.paths.dir_logreg, map_location='cuda')
         net.load_state_dict(ckpt['state_dict'])
         weights = net.linear.weight.clone()
-        
-        img = img*(torch.nn.functional.functional.normalize(weights))
-        #img = torch.tensor [C, H, W]
-        # caricare modello logistico
-        #moltiplicare modello logistico per ogni organo (da normalizzare prima)
+        t = None
+        for w in weights:
+            
+            w = torch.nn.functional.normalize(w, dim=0)
+            w = w.reshape(1, 512, 512).to(device='cuda')
+            w = torch.add(w, 1)
+            #x = w.cpu().detach().numpy()
+            #print(np.unique(x))
+            
+            if t is None:
+                t = w
+            else:
+                t = torch.cat((t, w))
+        img = img*(t.unsqueeze(dim=0))
         return img

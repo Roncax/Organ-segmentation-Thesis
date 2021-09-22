@@ -12,5 +12,4 @@ __pycache__/
 
 data/checkpoints_stacking/
 data/checkpoints_segmentation/
-
-*.zip
+data/checkpoints_logreg/
