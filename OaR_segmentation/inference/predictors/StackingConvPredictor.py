@@ -21,17 +21,17 @@ class StackingConvPredictor(Predictor):
         self.channels = None
         
         
-    def initialize(self, load_dir_metamodel, channels, load_models_dir, models_type_list):
+    def initialize(self, load_dir_metamodel, channels, load_models_dir, models_type_list, meta_net_model):
         super(StackingConvPredictor, self).initialize()
         self.channels = channels
         self.nets = self.initialize_multinets(load_models_dir=load_models_dir, models_type_list= models_type_list)
-        self.meta_net = self.initialize_metamodel(load_dir_metamodel, self.n_classes)
+        self.meta_net = self.initialize_metamodel(load_dir_metamodel, self.n_classes, meta_net_model)
     
     
-    def initialize_metamodel(self, load_dir_metamodel, n_classes):
-        self.paths.set_pretrained_model_stacking(load_dir_metamodel)
+    def initialize_metamodel(self, load_dir_metamodel, n_classes, meta_net_model):
+        self.paths.set_pretrained_model(load_dir_metamodel)
         
-        return build_net(model='stack_UNet', n_classes=n_classes, channels=n_classes-1, load_inference=True,load_dir=self.paths.dir_pretrained_model)
+        return build_net(model=meta_net_model, n_classes=n_classes, channels=n_classes-1, load_inference=True,load_dir=self.paths.dir_pretrained_model)
         
         
     def initialize_multinets(self, load_models_dir, models_type_list):
@@ -76,7 +76,10 @@ class StackingConvPredictor(Predictor):
                         if final_array_prediction is None:
                             final_array_prediction = output
                         else:
-                            final_array_prediction = torch.cat((output, final_array_prediction), dim=1)
+                            if self.meta_net.name == "LogReg_thresholding":
+                                final_array_prediction = torch.cat((final_array_prediction, output), dim=1)
+                            else:
+                                final_array_prediction = torch.cat((output, final_array_prediction), dim=1)
 
                     final_array_prediction = final_array_prediction.to(device="cuda", dtype=torch.float32)
                     
@@ -90,9 +93,22 @@ class StackingConvPredictor(Predictor):
                         
                     probs = stacking_output    
                     probs = F.softmax(probs, dim=1) #todo test sigmoid
-                    probs = probs.squeeze().cpu().numpy()
+                    probs = probs.squeeze().cpu().detach().numpy()
 
                     probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
+                    
+                    
+                    # probs = stacking_output 
+                    
+                    # probs = torch.squeeze(probs)
+                    # row_exclude =0
+                    # probs = torch.cat((probs[:row_exclude],probs[row_exclude+1:]))
+                    # probs = torch.unsqueeze(probs, dim=0)
+                    
+                    # probs = F.softmax(probs, dim=1) #todo test sigmoid
+                    # probs = probs.squeeze().cpu().detach().numpy()
+
+                    # probs = self.combine_predictions(output_masks=probs) #np.delete(probs, 0, 0)
 
                     # TESTING
                     # mask = mask.squeeze().cpu().numpy()

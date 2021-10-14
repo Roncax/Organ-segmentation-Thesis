@@ -10,12 +10,12 @@ from copy import deepcopy
 def run_training():
     
     labels = {
-        "1": "RightLung",
-        "2": "LeftLung",
-        "3": "Heart",
-        "4": "Trachea",
+        # "1": "RightLung",
+        # "2": "LeftLung",
+        # "3": "Heart",
+        # "4": "Trachea",
         "5": "Esophagus",
-        "6": "SpinalCord"
+        # "6": "SpinalCord"
         }
     
     load_dir_list = {
@@ -30,18 +30,18 @@ def run_training():
 
     # dice, focal, crossentropy, dc_ce, twersky, jaccard
     loss_criteria = {
-                "1": "crossentropy",
-                "2": "crossentropy",
-                "3": "crossentropy",
-                "4": "crossentropy",
-                "5": "crossentropy",
-                "6": "crossentropy",
+                "1": "dc_ce",
+                "2": "dc_ce",
+                "3": "dc_ce",
+                "4": "dc_ce",
+                "5": "dc_ce",
+                "6": "dc_ce",
                 "coarse": "crossentropy"
                 }
 
     model = "deeplabv3"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
-    db_name = "StructSeg2019_Task3_Thoracic_OAR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
-    epochs = 500  
+    db_name = "SegTHOR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
+    epochs = 500  # max number of epochs
     batch_size = 2  # (>2 mandatory for deeplabv3)
     lr = 1e-3
     val = 0.20  
@@ -52,21 +52,27 @@ def run_training():
     deep_supervision = False  #only unet and seresunet
     dropout = True  #deeplav3 builded in, unet and seresunet only (segnet not supported)
     scale = 1 
-    channels = 1 # used for multi-channel 3d method (forse problemi con deeplab)
+    channels = 1 # 1 for grayscale, rgb not supoported
     multi_loss_weights = [1, 1] # [ce, dice]
     platform = "local"  # local, gradient, polimi
-    n_classes = 7   # 1 if binary, n+1 if n organ
+    n_classes = 1   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
     telegram = False
+    train_with_reduced_db = False
 
 
     # INITIAL CHECKS
     assert not (feature_extraction and fine_tuning), "Finetuning and feature extraction cannot be both active"
-    if feature_extraction or fine_tuning: assert old_classes > 0, "Old classes needed to be specified"
+    if feature_extraction or fine_tuning: 
+        assert old_classes > 0, "Old classes needed to be specified"
+    if model == "deeplabv3":
+        assert not deep_supervision, "Deeplab doesn't have deep supervision" 
+        assert batch_size > 1, "Deeplab must have a batch size > 2" 
+
 
     # Binary or Multiclass
     if n_classes == 1:
@@ -91,7 +97,8 @@ def run_training():
                                 labels=labels, network=net, deep_supervision=deep_supervision, 
                                 lr=lr, patience=patience, epochs=epochs,
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
-                                dataset_name=db_name,optimizer_type=optimizer, telegram=telegram)
+                                dataset_name=db_name,optimizer_type=optimizer, telegram=telegram, 
+                                train_with_reduced_db=train_with_reduced_db)
     
 
     if find_optimal_lr:

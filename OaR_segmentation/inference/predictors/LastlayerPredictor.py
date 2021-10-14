@@ -12,8 +12,9 @@ from OaR_segmentation.utilities.data_vis import visualize
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class LastLayerPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes):
-        super(LastLayerPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  paths=paths, labels=labels, n_classes=n_classes)
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+        super(LastLayerPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  
+                                                 paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         self.nets = None
         self.meta_net = None
         self.channels = None
@@ -30,15 +31,22 @@ class LastLayerPredictor(Predictor):
         self.paths.set_pretrained_model(load_dir_metamodel)
         
         return build_net(model='fusion_net', n_classes=n_classes, channels=1, load_inference=True,
-                         load_dir=self.paths.dir_pretrained_model, nets=self.nets)
+                         load_dir=self.paths.dir_pretrained_model, nets=self.nets, n_labels=len(self.nets))
         
         
     def initialize_multinets(self, load_models_dir, models_type_list):
+           # Restore all nets
         nets = {}
         for label in self.labels.keys():
+            if 'coarse' in label:
+                n_c = self.n_classes
+            else:
+                n_c=1
+                
+        
             self.paths.set_pretrained_model(load_models_dir[label])
 
-            nets[label] = build_net(model=models_type_list[label], n_classes=1, 
+            nets[label] = build_net(model=models_type_list[label], n_classes=n_c, 
                                          channels=self.channels, load_inference=True, 
                                          load_dir=self.paths.dir_pretrained_model, lastlayer_fusion=True)
         return nets
@@ -77,11 +85,11 @@ class LastLayerPredictor(Predictor):
                     probs = F.softmax(probs, dim=1)
                     probs = probs.squeeze().cpu().numpy()
 
-                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0), threshold=0.5)
+                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
 
                     # TESTING
-                    mask = mask.squeeze().cpu().numpy()
-                    visualize(image=probs, mask=probs, additional_1=mask, additional_2=mask, file_name='temp_img/x.png')
+                    #mask = mask.squeeze().cpu().numpy()
+                    #visualize(image=probs, mask=probs, additional_1=mask, additional_2=mask, file_name='temp_img/x.png')
                     
                     db.create_dataset(id[0], data=probs)    #  add the calculated image in the hdf5 results file
                     pbar.update(n=1)   # update the pbar by number of imgs in batch

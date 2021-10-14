@@ -12,6 +12,10 @@ from tqdm import trange
 import json
 import numpy as np
 import matplotlib
+from time import time, sleep
+from datetime import datetime
+from batchgenerators.utilities.file_and_folder_operations import *
+
 matplotlib.use('Agg')
 
 from  matplotlib import pyplot as plt
@@ -30,6 +34,46 @@ def viz_weights(weights, path, epoch):
     os.makedirs(f"{path}", exist_ok=True)
     plt.savefig(path + f"/epoch_{epoch}.png")
     plt.close()
+
+class Custom_Logger():  
+    def __init__(self, output_folder):
+        self.log_file = None
+        self.output_folder = output_folder
+    
+    
+    def print_to_log_file(self, *args, also_print_to_console=True, add_timestamp=True):
+
+        timestamp = time()
+        dt_object = datetime.fromtimestamp(timestamp)
+
+        if add_timestamp:
+            args = ("%s:" % dt_object, *args)
+
+        if self.log_file is None:
+            maybe_mkdir_p(self.output_folder)
+            timestamp = datetime.now()
+            self.log_file = join(self.output_folder, "training_log_%d_%d_%d_%02.0d_%02.0d_%02.0d.txt" %
+                                    (timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute,
+                                    timestamp.second))
+            with open(self.log_file, 'w') as f:
+                f.write("Starting... \n")
+        successful = False
+        max_attempts = 5
+        ctr = 0
+        while not successful and ctr < max_attempts:
+            try:
+                with open(self.log_file, 'a+') as f:
+                    for a in args:
+                        f.write(str(a))
+                        f.write(" ")
+                    f.write("\n")
+                successful = True
+            except IOError:
+                print("%s: failed to log: " % datetime.fromtimestamp(timestamp), sys.exc_info())
+                sleep(0.5)
+                ctr += 1
+        if also_print_to_console:
+            print(*args)
 
 if __name__ == "__main__":
 
@@ -64,7 +108,7 @@ if __name__ == "__main__":
     experiment_number = dict_db_parameters[name]
     json.dump(dict_db_parameters, open(paths.json_experiments_settings, "w"))
     paths.set_experiment_logreg_number(experiment_number)
-    
+    logger = Custom_Logger(output_folder=paths.dir_checkpoint)
     
     net = LogisticRegression(input_size=512*512, n_classes=n_classes)
     net = net.to(device='cuda')
@@ -86,7 +130,8 @@ if __name__ == "__main__":
     patience_count = 0
     
     for epoch in range(epochs):
-        
+        logger.print_to_log_file(f'Epoch {epoch} starting')
+
         # TRAINING
         net.train()
         with trange(len(tr_gen), unit='batch', leave=False) as tbar: 
@@ -104,7 +149,8 @@ if __name__ == "__main__":
                 
                 tbar.update(list(image.shape)[0])
         
-        viz_weights(weights = net.linear.weight.clone().detach().cpu().numpy(), path=paths.dir_checkpoint, epoch=epoch)
+        logger.print_to_log_file(f'Train loss: {loss.item()}')
+
 
         # VALIDATION
         outputs = []
@@ -119,16 +165,19 @@ if __name__ == "__main__":
                     output = net.validation_step(img=image, organ=label)
                     outputs.append(output)
                 tbar.update(list(image.shape)[0])
-                
+        
         result = net.validation_epoch_end(outputs)
         net.epoch_end(epoch, result)
         history.append(result)
-
+        logger.print_to_log_file(f'Validation loss: {result["val_loss"]}')
+        logger.print_to_log_file(f'Validation accuracy: {result["val_acc"]}')
+        
         # SAVE BEST MODEL and EARLY STOPPING
         current_eval_loss = result['val_loss']
         if epoch == 0:
             best_eval_loss = current_eval_loss
-                        
+            
+            viz_weights(weights = net.linear.weight.clone().detach().cpu().numpy(), path=paths.dir_checkpoint, epoch=epoch)
             torch.save({'state_dict': net.state_dict()},f'{paths.dir_checkpoint}/best_model.model')
 
         else:
@@ -136,11 +185,16 @@ if __name__ == "__main__":
                 torch.save({'state_dict': net.state_dict()},f'{paths.dir_checkpoint}/best_model.model')
                 best_eval_loss = current_eval_loss
                 patience_count = 0
+                
+                viz_weights(weights = net.linear.weight.clone().detach().cpu().numpy(), path=paths.dir_checkpoint, epoch=epoch)
+                logger.print_to_log_file(f'Best validation epoch, saving model...')
             else:
                 patience_count += 1
+            
+            logger.print_to_log_file(f'Patience: {patience_count}/{patience}')
         
         if patience_count >= patience:
-            print("My patience ended")
+            logger.print_to_log_file(f'Patience ended')
             break
                 
                 

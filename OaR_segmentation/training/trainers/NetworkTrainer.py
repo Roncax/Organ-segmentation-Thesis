@@ -411,6 +411,8 @@ class NetworkTrainer(object):
 
             if self.best_val_eval_criterion_MA is None:
                 self.best_val_eval_criterion_MA = self.val_eval_criterion_MA
+                self.save_checkpoint(join(self.output_folder, "model_best.model"))
+                self.print_to_log_file("saving first checkpoint...")
 
             # check if the current epoch is the best one according to moving average of validation criterion. If so
             # then save 'best' model
@@ -510,7 +512,7 @@ class NetworkTrainer(object):
             with autocast():
                 output = self.network(data)
                 
-                #data_t = data.clone().detach().squeeze().cpu().numpy()
+                #data_t = data.clone().detach().squeeze(dim=0).cpu().numpy()
                 del data
                 l = self.loss(output, target)
 
@@ -535,7 +537,7 @@ class NetworkTrainer(object):
         if viz:
             if self.network.deep_supervision:
                 output = output[0]
-            #self.test_viz(output=output,target=target, data_t=data_t)
+            self.test_viz(output=output,target=target, data_t=data_t)
 
         del target
 
@@ -629,7 +631,7 @@ class NetworkTrainer(object):
         if self.network.n_classes > 2:
             out_t = np.delete(out_t, 0, 0)
         out_t = combine_predictions(output_masks=out_t, threshold=0.5)
-        data_t = combine_predictions(output_masks=data_t, threshold=0.5)
+        #data_t = combine_predictions(output_masks=data_t, threshold=0.5)
         
         target_t = target.clone().detach().squeeze().cpu().numpy()       
-        visualize(image=data_t, mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img.png")
+        visualize(image=data_t.squeeze(), mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img.png")

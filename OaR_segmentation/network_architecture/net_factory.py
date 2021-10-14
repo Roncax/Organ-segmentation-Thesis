@@ -7,11 +7,13 @@ from OaR_segmentation.network_architecture.stack_testnet import build_stack_unet
 from OaR_segmentation.network_architecture.se_resunet import build_SeResUNet
 from OaR_segmentation.network_architecture.deeplab_v3p import build_deeplabV3
 from OaR_segmentation.network_architecture.last_layer_fusion import build_LastLayerFusionNet
+from OaR_segmentation.network_architecture.Onex1ConvNet import build_Onex1StackConv_Unet
+from OaR_segmentation.network_architecture.logreg_thresholding import build_LogReg_thresholding
 
 # create a net for every specified model
 def build_net(model, channels, n_classes, finetuning=False, load_dir=None, feature_extraction=False,
               old_classes=None, load_inference=False, dropout=False, deep_supervision=False, nets=None, 
-              lastlayer_fusion=False, retrain_list = None):
+              lastlayer_fusion=False, retrain_list = None, n_labels=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     if model == "unet":
@@ -41,14 +43,23 @@ def build_net(model, channels, n_classes, finetuning=False, load_dir=None, featu
                          load_inference=load_inference, deep_supervision=deep_supervision)
         
     elif model == "fusion_net":
-        assert nets is not None, "Fusion with no nets?, try again"
-        assert retrain_list is not None, "Fusion with no retrain_list?, try again"
+        #assert nets is not None, "Fusion with no nets?, try again"
+        #assert retrain_list is not None, "Fusion with no retrain_list?, try again"
         net = build_LastLayerFusionNet(channels=channels, n_classes=n_classes, load_dir=load_dir,
-                                       device=device, nets=nets, retrain_list=retrain_list)
+                                       device=device, nets=nets, retrain_list=retrain_list, n_labels=n_labels)
+    elif model == "Onex1StackConv_Unet":
+        net = build_Onex1StackConv_Unet(channels=channels, n_classes=n_classes, finetuning=finetuning, load_dir=load_dir,
+                         device=device, feature_extraction=feature_extraction, old_classes=old_classes,
+                         load_inference=load_inference, deep_supervision=deep_supervision)
+        
+    elif model == "LogReg_thresholding":
+        net = build_LogReg_thresholding(channels=channels, n_classes=n_classes, finetuning=finetuning, load_dir=load_dir,
+                         device=device, feature_extraction=feature_extraction, old_classes=old_classes,
+                         load_inference=load_inference, deep_supervision=deep_supervision)
 
     else:
         net = None
-        print("WARNING! The specified net doesn't exist")
+        assert net is not None, "WARNING! The specified net doesn't exist"
 
     return net
 

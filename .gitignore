@@ -7,8 +7,8 @@ __pycache__/
 .idea/
 *.hdf5
 .vscode/
-
-
+*.zip
+*.html
 
 data/checkpoints_stacking/
 data/checkpoints_segmentation/

@@ -143,5 +143,7 @@ def build_segnet(channels, n_classes, finetuning, load_dir, device,
     net.name = "SegNet"
     net.n_channels = channels
     net.lastlayer_fusion = lastlayer_fusion
+    net.deep_supervision = False
+
     
     return net.to(device=device)

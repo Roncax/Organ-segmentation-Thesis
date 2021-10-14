@@ -20,17 +20,16 @@ class StandardPredictor(Predictor):
         self.net = None
         self.channels = None
 
-    def initialize(self, channels, load_models_dir, models_type_list, deeplab_backbone):
+    def initialize(self, channels, load_models_dir, models_type_list):
         super(StandardPredictor, self).initialize()
         self.channels = channels
-        self.net = self.initialize_net(
-            load_models_dir=load_models_dir, models_type_list=models_type_list, deeplab_backbone=deeplab_backbone)
+        self.net = self.initialize_net(load_models_dir=load_models_dir, models_type_list=models_type_list)
 
-    def initialize_net(self, load_models_dir, models_type_list, deeplab_backbone):
+    def initialize_net(self, load_models_dir, models_type_list):
         self.paths.set_pretrained_model(load_models_dir["coarse"])
         coarse_net = build_net(model=models_type_list["coarse"], n_classes=self.n_classes,
                                channels=self.channels, load_inference=True,
-                               load_dir=self.paths.dir_pretrained_model, backbone=deeplab_backbone)
+                               load_dir=self.paths.dir_pretrained_model)
         return coarse_net
 
     def predict(self):
@@ -56,11 +55,12 @@ class StandardPredictor(Predictor):
                     else:
                         probs = torch.sigmoid(output)
 
-                    full_mask = probs.squeeze().cpu().numpy()
 
                     if self.logistic_regression_weights:
-                        full_mask = self.apply_logistic_weights(full_mask)
-                        
+                        probs = self.apply_logistic_weights(probs)
+                    
+                    full_mask = probs.squeeze().cpu().detach().numpy()
+
                     if self.net.n_classes > 1:
                         res = self.combine_predictions(output_masks=np.delete(full_mask, 0, 0))
                     else:

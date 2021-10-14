@@ -12,15 +12,14 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 import json
 import numpy as np
-
+import seaborn as sns
 
 
 def find_HU_composition(dataset):
     gen = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8, pin_memory=True, drop_last=False)
     total_img = None
-
     with trange(len(gen), unit='batch', leave=False) as tbar:
-        for batch in gen:
+        for batch in gen:            
             if total_img is None:
                 total_img = batch['img']
                 shape = np.shape(batch['img'])
@@ -32,23 +31,15 @@ def find_HU_composition(dataset):
 
 
 def plot_HU(tr_HU, test_HU, paths):
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14,10))
-
-    fig.suptitle('Training and Test HU differences')
-    
-    ax1.hist([tr_HU.flatten()], bins=100, color='c')
-    plt.xlabel("Hounsfield Units (HU)")
-    plt.ylabel("Frequency")
-    ax1.set_title('Training dataset')
-    
-    ax2.hist([test_HU.flatten()], bins=100, color='c')
-    plt.xlabel("Hounsfield Units (HU)")
-    plt.ylabel("Frequency")
-    ax2.set_title('Test dataset')
-
-    #plt.show()
+    data_tr=tr_HU.detach().cpu().numpy().flatten()
+    data_test=test_HU.detach().cpu().numpy().flatten()
+    sns.histplot(data=data_tr, color='blue', alpha=0.4, bins=70,binwidth = 1, kde=True)
+    hist = sns.histplot(data=data_test, color='red', alpha=0.4, bins=70,binwidth = 1, kde=True)
+    hist.set_xlim(left=-1050)
+    hist.set_ylim(top = 4000)
+    plt.xlabel('HU value')
+    plt.ylabel('Count')
     plt.savefig(paths.dir_database+"/HU_analysis.png")
-    plt.close()
     
 def find_organ_percentage(dataset, labels):
     gen = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8, pin_memory=True, drop_last=False)
@@ -80,24 +71,34 @@ def find_organ_percentage(dataset, labels):
     return organ_percent
 
 def plot_organ_percentage(tr, test, paths):
-    fig, axs = plt.subplots(2, 2, figsize=(14,10))
+    # fig, axs = plt.subplots(2, 2, figsize=(14,10))
 
-    fig.suptitle('Training and Test Organ Percentages')
+    # fig.suptitle('Training and Test Organ Percentages')
     
     
-    axs[0,0].pie([tr['0'],100-tr['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
-    axs[0,0].set_title('Training dataset')
-    axs[0,1].pie([test['0'],100-test['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
-    axs[0,1].set_title('Test dataset')
+    # axs[0,0].pie([tr['0'],100-tr['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
+    # axs[0,0].set_title('Training dataset')
+    # axs[0,1].pie([test['0'],100-test['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
+    # axs[0,1].set_title('Test dataset')
     
-    tr.pop('0')
-    test.pop('0')
-    axs[1,0].pie(tr.values(), labels=tr.keys() , autopct='%1.1f%%')
-    axs[1,1].pie(test.values(), labels=test.keys(), autopct='%1.1f%%')
+    
+    data_bg= [[tr['0']],[test['0']]]
+    data_others = [100-tr['0'],100-test['0']]
+    
+    #sns.barplot(data=[100-tr['0'],100-test['0']], color = 'blue')
+    sns.barplot(data= data_bg,y=['Train', 'Test'], color='red')
+    plt.xlabel('Percentages')
+    plt.ylabel('Dataset')
+    # tr.pop('0')
+    # test.pop('0')
+    # axs[1,0].pie(tr.values(), labels=tr.keys() , autopct='%1.1f%%')
+    # axs[1,1].pie(test.values(), labels=test.keys(), autopct='%1.1f%%')
+
+    
 
     #plt.show()
     plt.savefig(paths.dir_database+"/Organ_percentage_analysis.png")
-    plt.close()
+    #plt.close()
     
     
 def find_organ_number(dataset, labels):
@@ -126,37 +127,47 @@ def plot_organ_number(tr, test, paths):
     fig.suptitle('Training and Test HU differences')
     
     ax1.bar(tr.keys() ,tr.values(),  color='c')
-    plt.xlabel("Organ")
-    plt.ylabel("Frequency")
+
     ax1.set_title('Training dataset')
     
     ax2.bar(test.keys(), test.values(), color='c')
     plt.xlabel("Organ")
     plt.ylabel("Frequency")
     ax2.set_title('Test dataset')
+    
+    
+    sns.barplot()
 
     #plt.show()
     plt.savefig(paths.dir_database+"/OrganxImage_analysis.png")
     plt.close()
 
+def save_imges_from_dicom():
+    pass
+
 if __name__ == '__main__':
     
-    db_name = "SegTHOR"
+    db_name = "StructSeg2019_Task3_Thoracic_OAR"
     platform = "local" #local, gradient, polimi
     paths = Paths(db=db_name, platform=platform)
     labels = {
- "1": "Esophagus",
-"2": "Heart",
-"3": "Trachea",
-"4": "Aorta"
-    }
+"1": "RightLung",
+"2": "LeftLung",
+"3": "Heart",
+"4": "Trachea",
+"5": "Esophagus",
+"6": "SpinalCord"
 
-    # HU analysis
+    }
+    
     tr_dataset = HDF5Exploration(hdf5_db_dir=paths.hdf5_db, mode='train',  db_info=json.load(open(paths.json_file_database)))
     test_dataset = HDF5Exploration(hdf5_db_dir=paths.hdf5_db, mode='test',  db_info=json.load(open(paths.json_file_database)))
-    training_HU = find_HU_composition(tr_dataset)
-    test_HU = find_HU_composition(test_dataset)
-    plot_HU(training_HU, test_HU, paths=paths)
+
+    # HU analysis
+    # training_HU = find_HU_composition(tr_dataset)
+    # test_HU = find_HU_composition(test_dataset)
+    
+    # plot_HU(training_HU, test_HU, paths=paths)
     
     # % organ analysis
     training_perc = find_organ_percentage(tr_dataset, labels=labels)
@@ -164,10 +175,10 @@ if __name__ == '__main__':
 
     plot_organ_percentage(training_perc, test_perc, paths=paths)
     
-    # Organ x image analysis
-    training_num = find_organ_number(tr_dataset, labels=labels)
-    test_num = find_organ_number(test_dataset, labels=labels)
+    # # Organ x image analysis
+    # training_num = find_organ_number(tr_dataset, labels=labels)
+    # test_num = find_organ_number(test_dataset, labels=labels)
 
-    plot_organ_number(training_num, test_num, paths=paths)
+    # plot_organ_number(training_num, test_num, paths=paths)
 
     

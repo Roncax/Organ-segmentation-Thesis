@@ -75,8 +75,8 @@ def plot_single_result(score, type, path, exp_num):
     plt.close()
 
         
-def boxplot_plotly(score, type, path, exp_num, colors):    
-    fig = px.box(data_frame=score, title=f'{exp_num}_{type}')
+def boxplot_plotly(score, type, path, exp_num, colors):
+    fig = px.box(data_frame=score, title=f'{exp_num}_{type}', points='all')
     fig.write_html(path + f"/{exp_num}_{type}.html")    
     
 

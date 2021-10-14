@@ -15,15 +15,16 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 class LastLayerFusionNet(nn.Module):
-    def __init__(self, n_channels, n_classes):
+    def __init__(self, n_channels, n_classes, n_labels):
         super(LastLayerFusionNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.name = "LastLayerFusionNet"
         self.deep_supervision = False
+        self.n_labels = n_labels
         
-        self.nets=None        
-        self.outc = OutConv(64*(self.n_classes-1), n_classes) # fusion last layers
+        self.nets=None
+        self.outc = OutConv(64*(self.n_labels), n_classes) # fusion last layers
 
     def initialize(self, nets):
         self.nets=nn.ModuleDict(nets)# dict {1:net, 2:net, ..}
@@ -50,11 +51,12 @@ def set_parameter_requires_grad(model):
         param.requires_grad = False
 
 
-def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, load_dir=None):
+def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, n_labels, load_dir=None):
     # INFERENCE 
     if load_dir is not None:
-        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes).cuda()
+        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels).cuda()
         ckpt = torch.load(load_dir, map_location=device)
+        model.initialize(nets)
         model.load_state_dict(ckpt['state_dict'])
     
     # TRAINING
@@ -63,7 +65,7 @@ def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, lo
             if not retrain_list[net]:
                 set_parameter_requires_grad(nets[net])
 
-        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes).cuda()
+        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels).cuda()
         model.initialize(nets)
 
     return model.to(device=device)

@@ -46,12 +46,11 @@ if __name__ == "__main__":
     db_prediction_creation = False
     n_classes = 7   # 1 if binary, n+1 if n organ
     scale = 1
-    deeplabv3_backbone = "mobilenet"  # resnet, drn, mobilenet, xception
     paths = Paths(db=db_name, platform=platform)
     loss_criterion = 'crossentropy' # dice, focal, crossentropy, dc_ce, twersky, jaccard
     lr = 1e-3 
     patience = 5
-    deep_supervision = True
+    deep_supervision = False
     dropout = True
     fine_tuning = False
     batch_size = 1
@@ -67,13 +66,15 @@ if __name__ == "__main__":
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
     telegram = False
+    mod_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
 
+    if mod_type == "Onex1StackConv_Unet" or mod_type == "LogReg_thresholding":
+        assert not deep_supervision, "Onex1StackConv_Unet/LogReg_thresholding doesn't have deep supervision" 
 
 
     nets = {}
     for label in labels.keys():
         paths.set_pretrained_model(load_dir_list[label])
-        paths.set_train_stacking_results()
 
         nets[label] = build_net(model=models[label], n_classes=1, channels=1,
                                 load_inference=True, load_dir=paths.dir_pretrained_model)
@@ -82,7 +83,7 @@ if __name__ == "__main__":
         create_combined_dataset(nets=nets, scale=scale, paths=paths, labels=labels)
 
 
-    net = build_net(model='stack_UNet', n_classes=n_classes, channels=channels, load_inference=False, deep_supervision=deep_supervision)
+    net = build_net(model=mod_type, n_classes=n_classes, channels=channels, load_inference=False, deep_supervision=deep_supervision)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                 batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,
@@ -91,6 +92,7 @@ if __name__ == "__main__":
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
                                 dataset_name=db_name, optimizer_type=optimizer, stacking=True, telegram=telegram)
 
+
     if find_optimal_lr:
         trainer_temp = deepcopy(trainer)
         trainer_temp.initialize()
@@ -98,5 +100,6 @@ if __name__ == "__main__":
         trainer.lr = optimal_lr
 
     trainer.initialize()
-    trainer.setup_info_dict(dropout=dropout, feature_extraction=feature_extraction, pretrained_model=load_dir_list, fine_tuning=fine_tuning, used_output_models=models)
+    trainer.setup_info_dict(dropout=dropout, feature_extraction=feature_extraction, pretrained_model=load_dir_list, 
+                            fine_tuning=fine_tuning, used_output_models=models)
     trainer.run_training()

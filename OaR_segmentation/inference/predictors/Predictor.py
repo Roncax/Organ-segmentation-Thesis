@@ -53,7 +53,7 @@ class Predictor(object):
         
         output_masks[not np.argmax(output_masks)] = 0
         output_masks[output_masks >= self.mask_threshold] = 1
-        output_masks[output_masks < self.mask_threshold] = 0
+        output_masks[output_masks != 1] = 0
 
         for i in range(np.shape(output_masks)[0]):
             combination_matrix[output_masks[i,:,:] == 1] = i+1 #on single dimension - single image
@@ -62,7 +62,7 @@ class Predictor(object):
         return combination_matrix
     
     
-    def compute_save_metrics(self, metrics_list, db_name, colormap, experiment_num, dict_test_info, sample_gif_name="volume_46", gif_viz = False):
+    def compute_save_metrics(self, metrics_list, db_name, colormap, experiment_num, dict_test_info, labels, sample_gif_name="volume_46", gif_viz = False):
         """Compute, save and plot the specified metrics for every volume in the hdf5_results dir
 
         Args:
@@ -95,8 +95,8 @@ class Predictor(object):
 
                             # GIF management
                             if volume == sample_gif_name and gif_viz:
-                                msk = grayscale2rgb_mask(colormap=colormap, labels=self.labels, mask=slice_pred_mask)
-                                gt = grayscale2rgb_mask(colormap=colormap, labels=self.labels, mask=slice_gt_mask)
+                                msk = grayscale2rgb_mask(colormap=colormap, labels=labels, mask=slice_pred_mask)
+                                gt = grayscale2rgb_mask(colormap=colormap, labels=labels, mask=slice_gt_mask)
                                 plot = prediction_plot(img=slice_test_img, mask=msk, ground_truth=gt)
                                 vol.append(plot)
 
@@ -117,20 +117,20 @@ class Predictor(object):
                                     out_name=f"example({volume})_inference({experiment_num})")
 
                         # metrics computation with confusion matrix and store results
-                        for l in self.labels.keys():
+                        for l in labels.keys():
                             pred_vol_cp = np.zeros(pred_vol.shape)
                             gt_vol_cp = np.zeros(gt_vol.shape)
                             pred_vol_cp[pred_vol == int(l)] = 1
                             gt_vol_cp[gt_vol == int(l)] = 1
                             cm = ConfusionMatrix(test=pred_vol_cp, reference=gt_vol_cp)
-                            results[volume][self.labels[l]] = cm
+                            results[volume][labels[l]] = cm
 
                         pbar.update(1)
 
                     # plot results
                     for m in metrics_list:
                         results_dict = self.save_results(results=results, path_json=self.paths.json_file_inference_results, met=m,
-                                                        experiment_num=experiment_num, test_info=dict_test_info, labels=self.labels, 
+                                                        experiment_num=experiment_num, test_info=dict_test_info, labels=labels, 
                                                         path_settings=self.paths.json_experiments_settings)
 
                         boxplot_plotly(score=results_dict, type=m, path=self.paths.dir_plots, exp_num=experiment_num, colors=colormap)
@@ -181,7 +181,7 @@ class Predictor(object):
         ckpt = torch.load(self.paths.dir_logreg, map_location='cuda')
         net.load_state_dict(ckpt['state_dict'])
         weights = net.linear.weight.clone()
-        t = None
+        t = torch.zeros(1, 512, 512).cuda()
         for w in weights:
             
             w = torch.nn.functional.normalize(w, dim=0)
@@ -190,9 +190,8 @@ class Predictor(object):
             #x = w.cpu().detach().numpy()
             #print(np.unique(x))
             
-            if t is None:
-                t = w
-            else:
-                t = torch.cat((t, w))
+            t = torch.cat((t, w))
+                
+        
         img = img*(t.unsqueeze(dim=0))
         return img

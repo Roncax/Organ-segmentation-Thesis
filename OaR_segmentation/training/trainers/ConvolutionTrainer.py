@@ -18,8 +18,8 @@ import telegram_send
 
 class ConvolutionTrainer(NetworkTrainer):
     def __init__(self, paths, image_scale, augmentation, batch_size, loss_criterion, val_percent, labels, network, 
-                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, lastlayer_fusion=False, telegram=False, deep_supervision = False, stacking = False, deterministic=False,
-                 fp16=True):
+                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, lastlayer_fusion=False, 
+                 telegram=False, deep_supervision = False, stacking = False, deterministic=False, fp16=True, train_with_reduced_db=False):
         super(ConvolutionTrainer, self).__init__(deterministic=deterministic, fp16=fp16)
 
         self.paths = paths
@@ -45,6 +45,7 @@ class ConvolutionTrainer(NetworkTrainer):
         self.val_percent = val_percent
         self.stacking = stacking
         self.lastlayer_fusion = lastlayer_fusion
+        self.train_with_reduced_db=train_with_reduced_db
 
         self.info_dict = None
         self.experiment_number = None
@@ -56,16 +57,13 @@ class ConvolutionTrainer(NetworkTrainer):
         self.weight_decay = 1e-8
 
     def set_experiment_number(self):
-        name = "stacking_experiments" if self.stacking else f"experiments_{self.platform}"
+        name = f"experiments_{self.platform}"
         
         dict_db_parameters = json.load(open(self.paths.json_experiments_settings))
         dict_db_parameters[name] += 1
         self.experiment_number = dict_db_parameters[name]
         json.dump(dict_db_parameters, open(self.paths.json_experiments_settings, "w"))
-        if self.stacking:
-            self.paths.set_experiment_stacking_number(self.experiment_number)
-        else:
-            self.paths.set_experiment_number(self.experiment_number)
+        self.paths.set_experiment_number(self.experiment_number)
         self.output_folder = self.paths.dir_checkpoint
 
     def initialize(self, training=True):
@@ -124,15 +122,17 @@ class ConvolutionTrainer(NetworkTrainer):
             self.dataset = HDF5DatasetStacking(scale=self.img_scale, hdf5_db_dir=self.paths.hdf5_stacking,
                                     labels=self.labels, augmentation=self.augmentation, 
                                     channels=self.network.n_channels)
-        if self.lastlayer_fusion:
+        elif self.lastlayer_fusion:
             self.dataset = HDF5lastlayer(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
-                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels, lastlayer_fusion=self.lastlayer_fusion)
+                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels,
+                                    train_with_reduced_db=self.train_with_reduced_db)
 
         else:
             self.dataset = HDF5Dataset(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
-                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels, lastlayer_fusion=self.lastlayer_fusion)
+                                    labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels,
+                                    train_with_reduced_db=self.train_with_reduced_db)
 
         n_val = int(len(self.dataset) * self.val_percent)
         n_train = len(self.dataset) - n_val
@@ -207,7 +207,9 @@ class ConvolutionTrainer(NetworkTrainer):
         
     
 
-    def setup_info_dict(self, pretrained_model='NA', dropout = 'NA', feature_extraction = 'NA', fine_tuning = 'NA', used_output_models = None):
+    def setup_info_dict(self, pretrained_model='NA', dropout = 'NA', 
+                        feature_extraction = 'NA', fine_tuning = 'NA', 
+                        used_output_models = None, retrain_models=None):
         self.info_dict = {
             self.experiment_number: {
                 "dataset": self.dataset_name,
@@ -236,10 +238,12 @@ class ConvolutionTrainer(NetworkTrainer):
                 "weight_decay": self.weight_decay,
                 "optimizer": self.optimizer_type,
                 "epoch_results": {},
+                "retrain_models":retrain_models,
+                "train_with_reduced_db":self.train_with_reduced_db
             }
         }
         
-        if self.stacking: self.info_dict["used_output_models"]=used_output_models
+        if self.stacking: self.info_dict[self.experiment_number]["used_output_models"]=used_output_models
 
         self.json_log_save()
 
