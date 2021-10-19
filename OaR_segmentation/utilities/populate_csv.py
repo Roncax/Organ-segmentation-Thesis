@@ -26,7 +26,7 @@ def create_pandas_metrics(json_metrics, metrics_list, labels):
 if __name__ == '__main__':
     
     file_path="data/results/inference_results.json"
-    experiment = "19"
+    experiment = "36"
     metrics_list =['Dice', 'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
 
     labels = {

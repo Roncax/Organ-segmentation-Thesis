@@ -12,12 +12,13 @@ from OaR_segmentation.utilities.data_vis import visualize
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class LastLayerPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights, in_features):
         super(LastLayerPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  
                                                  paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
         self.nets = None
         self.meta_net = None
         self.channels = None
+        self.in_features = in_features
         
         
     def initialize(self, load_dir_metamodel, channels, load_models_dir, models_type_list):
@@ -31,7 +32,7 @@ class LastLayerPredictor(Predictor):
         self.paths.set_pretrained_model(load_dir_metamodel)
         
         return build_net(model='fusion_net', n_classes=n_classes, channels=1, load_inference=True,
-                         load_dir=self.paths.dir_pretrained_model, nets=self.nets, n_labels=len(self.nets))
+                         load_dir=self.paths.dir_pretrained_model, nets=self.nets, n_labels=len(self.nets), in_features=self.in_features)
         
         
     def initialize_multinets(self, load_models_dir, models_type_list):

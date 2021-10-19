@@ -5,6 +5,7 @@ import h5py
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+import torch.nn.functional as F
 
 from OaR_segmentation.network_architecture.net_factory import build_net
 from OaR_segmentation.inference.predictors.Predictor import Predictor
@@ -57,7 +58,8 @@ class StackingArgmaxPredictor(Predictor):
 
                         with torch.no_grad():
                             output = self.nets[organ](img)
-                            output = torch.sigmoid(output)
+                            output = F.sigmoid(output)
+
                         
                         if final_array_prediction is None:
                             final_array_prediction = output
@@ -66,8 +68,9 @@ class StackingArgmaxPredictor(Predictor):
 
                     if self.logistic_regression_weights:
                         final_array_prediction = self.apply_logistic_weights(final_array_prediction)
+                    
                     probs = final_array_prediction
-                    #probs = torch.sigmoid(probs)
+                    probs = F.softmax(probs, dim=1)
                     full_mask = probs.squeeze().cpu().detach().numpy()
                     comb_img = self.combine_predictions(output_masks=full_mask)
                     

@@ -34,15 +34,15 @@ def run_training():
                 "2": "dc_ce",
                 "3": "dc_ce",
                 "4": "dc_ce",
-                "5": "dc_ce",
+                "5": "focal",
                 "6": "dc_ce",
                 "coarse": "crossentropy"
                 }
 
     model = "deeplabv3"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
-    db_name = "SegTHOR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
+    db_name = "StructSeg2019_Task3_Thoracic_OAR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     epochs = 500  # max number of epochs
-    batch_size = 2  # (>2 mandatory for deeplabv3)
+    batch_size = 2 # (>2 mandatory for deeplabv3)
     lr = 1e-3
     val = 0.20  
     patience = 5  

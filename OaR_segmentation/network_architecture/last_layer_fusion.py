@@ -15,7 +15,7 @@ class OutConv(nn.Module):
         return self.conv(x)
 
 class LastLayerFusionNet(nn.Module):
-    def __init__(self, n_channels, n_classes, n_labels):
+    def __init__(self, n_channels, n_classes, n_labels, in_features):
         super(LastLayerFusionNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -24,7 +24,7 @@ class LastLayerFusionNet(nn.Module):
         self.n_labels = n_labels
         
         self.nets=None
-        self.outc = OutConv(64*(self.n_labels), n_classes) # fusion last layers
+        self.outc = OutConv(in_features, n_classes) # fusion last layers
 
     def initialize(self, nets):
         self.nets=nn.ModuleDict(nets)# dict {1:net, 2:net, ..}
@@ -34,7 +34,7 @@ class LastLayerFusionNet(nn.Module):
         c = None
         for organ in x.keys():
             if self.nets[organ].name == "DeepLab V3":
-                t2 = self.nets[organ].decoder_output
+                t2 = self.nets[organ](x[organ])
             else:
                 t2 = self.nets[organ](x[organ])
             
@@ -51,10 +51,10 @@ def set_parameter_requires_grad(model):
         param.requires_grad = False
 
 
-def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, n_labels, load_dir=None):
+def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, n_labels, in_features, load_dir=None):
     # INFERENCE 
     if load_dir is not None:
-        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels).cuda()
+        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels, in_features=in_features).cuda()
         ckpt = torch.load(load_dir, map_location=device)
         model.initialize(nets)
         model.load_state_dict(ckpt['state_dict'])
@@ -65,7 +65,7 @@ def build_LastLayerFusionNet(channels, n_classes, nets, device, retrain_list, n_
             if not retrain_list[net]:
                 set_parameter_requires_grad(nets[net])
 
-        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels).cuda()
+        model = LastLayerFusionNet(n_channels=channels, n_classes=n_classes, n_labels=n_labels, in_features=in_features).cuda()
         model.initialize(nets)
 
     return model.to(device=device)

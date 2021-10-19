@@ -40,6 +40,7 @@ def eval_train(net, loader, device):
 
 
             for true_mask, pred in zip(true_masks, mask_pred):
+                
                 if net.n_classes > 1:
                     # multiclass evaluation over single image-mask pair
                     tot += F.cross_entropy(input=mask_pred, target=true_masks.squeeze(1)).item()
@@ -62,7 +63,15 @@ def eval_train(net, loader, device):
             pbar.update(n=1)
 
     net.train()  # the net return to training mode
-    return 1 - (2 * tp / (2 * tp + fp + fn)) if net.n_classes == 1 else tot / n_val
+    if net.n_classes == 1:
+        if tp + fp + fn == 0:
+            result = 1
+        else:
+            result = 1 - (2 * tp / (2 * tp + fp + fn))
+    else:
+        result = tot/n_val
+        
+    return result
 
 
 def eval_inference(patient, mask_dict, paths):

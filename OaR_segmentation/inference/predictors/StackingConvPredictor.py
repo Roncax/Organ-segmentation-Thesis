@@ -67,19 +67,16 @@ class StackingConvPredictor(Predictor):
                     for organ in self.nets.keys():
                         self.nets[organ].eval()
                         img = imgs[organ].to(device="cuda", dtype=torch.float32)
-
                         with torch.no_grad():
                             output = self.nets[organ](img)
-                            output = torch.sigmoid(output)
+                            output = F.sigmoid(output) #! probabile problema con 1x1 convolution
                             output = output.to(device="cuda", dtype=torch.float32)
 
                         if final_array_prediction is None:
                             final_array_prediction = output
                         else:
-                            if self.meta_net.name == "LogReg_thresholding":
-                                final_array_prediction = torch.cat((final_array_prediction, output), dim=1)
-                            else:
-                                final_array_prediction = torch.cat((output, final_array_prediction), dim=1)
+                            final_array_prediction = torch.cat((final_array_prediction, output), dim=1)
+     
 
                     final_array_prediction = final_array_prediction.to(device="cuda", dtype=torch.float32)
                     
@@ -92,10 +89,10 @@ class StackingConvPredictor(Predictor):
                         stacking_output = self.apply_logistic_weights(stacking_output)
                         
                     probs = stacking_output    
-                    probs = F.softmax(probs, dim=1) #todo test sigmoid
-                    probs = probs.squeeze().cpu().detach().numpy()
+                    probs = F.softmax(probs, dim=1)
+                    probs = probs.squeeze().cpu().numpy()
 
-                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
+                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0), threshold=0.5)
                     
                     
                     # probs = stacking_output 
@@ -113,8 +110,8 @@ class StackingConvPredictor(Predictor):
                     # TESTING
                     # mask = mask.squeeze().cpu().numpy()
                     # test = final_array_prediction.squeeze().cpu().numpy()
-                    # test = self.combine_predictions(output_masks=np.flip(test, axis=0))
-                    # visualize(image=probs, mask=test, additional_1=mask, additional_2=mask, file_name='temp_img/x')
+                    # test = self.combine_predictions(output_masks=test)
+                    # visualize(image=probs, mask=mask, additional_1=test, additional_2=test, file_name='temp_img/x')
                     
                     db.create_dataset(id[0], data=probs)    #  add the calculated image in the hdf5 results file
                     pbar.update(img.shape[0])   # update the pbar by number of imgs in batch

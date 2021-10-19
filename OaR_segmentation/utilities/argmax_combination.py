@@ -17,7 +17,7 @@ def combine_predictions(output_masks, threshold = None):
     
     output_masks[not np.argmax(output_masks)] = 0
     output_masks[output_masks >= threshold] = 1
-    output_masks[output_masks < threshold] = 0
+    output_masks[output_masks != 1] = 0
 
     for i in range(np.shape(output_masks)[0]):
         combination_matrix[output_masks[i,:,:] == 1] = i+1 #on single dimension - single image

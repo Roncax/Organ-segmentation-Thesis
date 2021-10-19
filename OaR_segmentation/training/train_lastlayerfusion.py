@@ -17,7 +17,7 @@ def run_training():
         "4": "Trachea",
         "5": "Esophagus",
         "6": "SpinalCord",
-        "5_a":"Esophagus"
+        "4_a":"Trachea"
     }
 
     load_dir_list = {
@@ -25,9 +25,9 @@ def run_training():
         "2": "10011/model_best.model",
         "3": "10025/model_best.model",
         "4": "10040/model_best.model",
-        "5": "10041/model_best.model",
+        "5": "10015/model_best.model",
         "6": "10034/model_best.model",
-        "5_a":"10015/model_best.model"
+        "4_a":"10052/model_best.model"
     }
 
     models_type_list = {
@@ -37,7 +37,7 @@ def run_training():
         "4": "seresunet",
         "5": "unet",
         "6": "unet",
-        "5_a":"unet",
+        "4_a":"deeplabv3",
         "coarse": "unet"
     }
 
@@ -48,7 +48,7 @@ def run_training():
         "4": False,
         "5": False,
         "6": False,
-        "5_a": False
+        "4_a": False
     }
 
     loss_crit = "crossentropy"  # dice, focal, crossentropy, dc_ce, twersky, jaccard
@@ -56,7 +56,7 @@ def run_training():
     # SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     db_name = "StructSeg2019_Task3_Thoracic_OAR"
     epochs = 500
-    batch_size = 1
+    batch_size = 2
     lr = 1e-3
     val = 0.2
     patience = 5
@@ -72,6 +72,7 @@ def run_training():
     optimizer = "adam"  # adam, rmsprop
     telegram = False
     train_with_reduced_db=False
+    in_features = 64*6 + 256*1 # 64 per ogni unet/resnet, 256 per ogni deeplab
 
     # Restore all nets
     nets = {}
@@ -87,7 +88,7 @@ def run_training():
 
     # BEGIN TRAINING
     net = build_net(model=model, n_classes=n_classes,
-                    channels=channels, nets=nets, retrain_list=retrain_list, n_labels=len(labels))
+                    channels=channels, nets=nets, retrain_list=retrain_list, n_labels=len(labels), in_features=in_features)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                  batch_size=batch_size, loss_criterion=loss_crit, val_percent=val,

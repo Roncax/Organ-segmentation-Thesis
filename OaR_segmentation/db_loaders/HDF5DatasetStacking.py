@@ -40,7 +40,7 @@ class HDF5DatasetStacking(Dataset):
                 if final_array is None:
                     final_array = t_mask_dict
                 else:
-                    final_array = np.concatenate((t_mask_dict, final_array), axis=0)
+                    final_array = np.concatenate((final_array, t_mask_dict), axis=0)
                     
             else:
                 gt_mask = prepare_inference(mask=masks[mask_name], scale=self.scale)

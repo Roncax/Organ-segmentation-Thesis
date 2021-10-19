@@ -11,7 +11,7 @@ from OaR_segmentation.network_architecture.Onex1ConvNet import build_Onex1StackC
 from OaR_segmentation.network_architecture.logreg_thresholding import build_LogReg_thresholding
 
 # create a net for every specified model
-def build_net(model, channels, n_classes, finetuning=False, load_dir=None, feature_extraction=False,
+def build_net(model, channels, n_classes, in_features = None, finetuning=False, load_dir=None, feature_extraction=False,
               old_classes=None, load_inference=False, dropout=False, deep_supervision=False, nets=None, 
               lastlayer_fusion=False, retrain_list = None, n_labels=None):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -46,7 +46,7 @@ def build_net(model, channels, n_classes, finetuning=False, load_dir=None, featu
         #assert nets is not None, "Fusion with no nets?, try again"
         #assert retrain_list is not None, "Fusion with no retrain_list?, try again"
         net = build_LastLayerFusionNet(channels=channels, n_classes=n_classes, load_dir=load_dir,
-                                       device=device, nets=nets, retrain_list=retrain_list, n_labels=n_labels)
+                                       device=device, nets=nets, retrain_list=retrain_list, n_labels=n_labels, in_features=in_features)
     elif model == "Onex1StackConv_Unet":
         net = build_Onex1StackConv_Unet(channels=channels, n_classes=n_classes, finetuning=finetuning, load_dir=load_dir,
                          device=device, feature_extraction=feature_extraction, old_classes=old_classes,

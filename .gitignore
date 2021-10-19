@@ -9,6 +9,7 @@ __pycache__/
 .vscode/
 *.zip
 *.html
+*.png
 
 data/checkpoints_stacking/
 data/checkpoints_segmentation/

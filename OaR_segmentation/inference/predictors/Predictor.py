@@ -9,6 +9,10 @@ import h5py
 from tqdm import tqdm
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
+import os
+from OaR_segmentation.preprocessing.ct_levels_enhance import setDicomWinWidthWinCenter
+from OaR_segmentation.preprocessing.preprocess_dataset import preprocess_test
 
 from OaR_segmentation.utilities.build_volume import grayscale2rgb_mask
 from OaR_segmentation.utilities.data_vis import prediction_plot, volume2gif, plot_single_result, boxplot_plotly
@@ -95,9 +99,34 @@ class Predictor(object):
 
                             # GIF management
                             if volume == sample_gif_name and gif_viz:
+                                slice_test_img = setDicomWinWidthWinCenter(img_data=slice_test_img, winwidth=1800, wincenter=-500)
+                                
+                                #slice_test_img = preprocess_test(img=slice_test_img, augmentation=False, crop_size=(320,320))
+
                                 msk = grayscale2rgb_mask(colormap=colormap, labels=labels, mask=slice_pred_mask)
                                 gt = grayscale2rgb_mask(colormap=colormap, labels=labels, mask=slice_gt_mask)
                                 plot = prediction_plot(img=slice_test_img, mask=msk, ground_truth=gt)
+                                
+                                #fig, axs = plt.subplots(1, 2)
+                                
+                                os.makedirs(f"{self.paths.dir_plots}/{sample_gif_name}_mask_images", exist_ok=True)
+                                plt.imshow(slice_test_img, cmap='gray')
+                                plt.imshow(slice_pred_mask, cmap='nipy_spectral', alpha=0.5) 
+                                plt.colorbar()
+                                plt.axis('off')  # clear x-axis and y-axis
+                                plt.savefig(self.paths.dir_plots + f"/{sample_gif_name}_mask_images/{slice}.png")
+                                plt.close()
+                                
+                                os.makedirs(f"{self.paths.dir_plots}/{sample_gif_name}_bt_images", exist_ok=True)
+                                plt.imshow(slice_test_img, cmap='gray')
+                                plt.imshow(slice_gt_mask, cmap='nipy_spectral', alpha=0.5) 
+                                plt.colorbar()
+                                plt.axis('off')  # clear x-axis and y-axis
+                                
+                                plt.savefig(self.paths.dir_plots + f"/{sample_gif_name}_bt_images/{slice}.png")
+                                plt.close()
+                                
+                                
                                 vol.append(plot)
 
                             # Adding slices to volumes
@@ -114,9 +143,9 @@ class Predictor(object):
 
                         if volume == sample_gif_name and gif_viz:
                             volume2gif(volume=vol, target_folder=self.paths.dir_plots,
-                                    out_name=f"example({volume})_inference({experiment_num})")
+                                        out_name=f"example({volume})_inference({experiment_num})")
 
-                        # metrics computation with confusion matrix and store results
+                        # # metrics computation with confusion matrix and store results
                         for l in labels.keys():
                             pred_vol_cp = np.zeros(pred_vol.shape)
                             gt_vol_cp = np.zeros(gt_vol.shape)

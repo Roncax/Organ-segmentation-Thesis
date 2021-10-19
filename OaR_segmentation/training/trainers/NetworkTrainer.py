@@ -286,7 +286,7 @@ class NetworkTrainer(object):
                     for d in self.tr_gen:
                         tbar.set_description("Epoch {}/{}".format(self.epoch, self.max_num_epochs))
 
-                        l = self.run_iteration(data_dict=d, do_backprop=True, viz =False)#True if i%100==0 else False)
+                        l = self.run_iteration(data_dict=d, do_backprop=True, viz = False) #True if i%100==0 else False)
 
                         i+=1
                         tbar.set_postfix(loss=round(float(l), 4))
@@ -512,7 +512,9 @@ class NetworkTrainer(object):
             with autocast():
                 output = self.network(data)
                 
-                #data_t = data.clone().detach().squeeze(dim=0).cpu().numpy()
+                if viz:
+                    data_t = data.clone().detach().squeeze(dim=0).cpu().numpy()
+                    
                 del data
                 l = self.loss(output, target)
 
@@ -625,13 +627,14 @@ class NetworkTrainer(object):
 
 
     def test_viz(self, output, target, data_t):
-        out_t = F.sigmoid(output)
-        out_t = output.clone().detach().squeeze().cpu().numpy().astype(np.float32)
+        out_t = F.softmax(output, dim=1)
+        out_t = out_t.clone().detach().squeeze().cpu().numpy().astype(np.float32)
         # delete bg prediction
         if self.network.n_classes > 2:
             out_t = np.delete(out_t, 0, 0)
         out_t = combine_predictions(output_masks=out_t, threshold=0.5)
-        #data_t = combine_predictions(output_masks=data_t, threshold=0.5)
+        data_t = combine_predictions(output_masks=data_t, threshold=0.5)
         
-        target_t = target.clone().detach().squeeze().cpu().numpy()       
+        target_t = target.clone().detach().squeeze().cpu().numpy()
+        print(np.unique(out_t))
         visualize(image=data_t.squeeze(), mask=out_t, additional_1= target_t, additional_2=target_t, file_name="test_img.png")
