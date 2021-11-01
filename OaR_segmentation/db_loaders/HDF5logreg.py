@@ -35,7 +35,7 @@ class HDF5DatasetLogReg(Dataset):
         for key in self.labels.keys():
             mask_gt = np.zeros(shape=mask.shape, dtype=int)            
             mask_gt[mask == int(key)] = key
-            mask_gt = prepare_inference(mask=mask_gt, scale=self.scale)
+            mask_gt = prepare_inference(mask=mask_gt, scale=self.scale, normalize=False)
             mask_gt = torch.from_numpy(mask_gt).type(torch.FloatTensor)
             all_organ_masks[key] = mask_gt
 

@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 class HDF5lastlayer(Dataset):
     def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  
-                 channels, augmentation=False, multiclass_test = False, db_set_train=False, train_with_reduced_db=False):
+                 channels, augmentation=False, multiclass_test = False, db_set_train=False, train_with_reduced_db=False, crop_size = None):
         self.db_info = db_info
         self.labels = labels
         self.db_dir = hdf5_db_dir
@@ -19,6 +19,7 @@ class HDF5lastlayer(Dataset):
         self.channels = channels
         self.multiclass_test = multiclass_test
         self.train_with_reduced_db = train_with_reduced_db
+        self.crop_size = crop_size
 
 
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
@@ -89,7 +90,7 @@ class HDF5lastlayer(Dataset):
                                                             winwidth=self.db_info["CTwindow_width"][self.labels[key]],
                                                             wincenter=self.db_info["CTwindow_level"][self.labels[key]])
                 img_single_organ = np.uint8(img_single_organ)
-                img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale)
+                img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale, normalize=True, crop_size=self.crop_size)
                 img_single_organ = torch.from_numpy(img_single_organ).type(torch.FloatTensor)
                 img_dict[key] = img_single_organ
                 
@@ -97,7 +98,8 @@ class HDF5lastlayer(Dataset):
                 #mask_gt[mask == int(k)] = k
         mask_gt = mask
         # Some preprocessing to the images
-        img_coarse, mask_gt = prepare_inference(img=img_coarse, mask=mask_gt, scale=self.scale)
+        img_coarse = prepare_inference(img=img_coarse, scale=self.scale, normalize=True, crop_size=self.crop_size)
+        mask_gt = prepare_inference(img=mask_gt ,scale=self.scale, normalize=False, crop_size=self.crop_size)
 
         return {
             'image_coarse': torch.from_numpy(img_coarse).type(torch.FloatTensor),

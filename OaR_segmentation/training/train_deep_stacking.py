@@ -12,33 +12,43 @@ from copy import deepcopy
 if __name__ == "__main__":
     
     load_dir_list = {
-        "1": "10018/model_best.model",
-        "2": "10011/model_best.model",
-        "3": "10025/model_best.model",
-        "4": "10040/model_best.model",
-        "5": "10015/model_best.model",
-        "6": "10034/model_best.model",
-        "coarse": "931/model_best.model"
+        "1": "10070/model_best.model",
+        "2": "10072/model_best.model",
+        "3": "10051/model_best.model",
+        "4": "10053/model_best.model",
+        "5": "10071/model_best.model",
+        "6": "10073/model_best.model",
+        "coarse": "1372/model_best.model"
     }
 
     models = {
         "1": "seresunet",
-        "2": "unet",
-        "3": "unet",
-        "4": "seresunet",
-        "5": "unet",
-        "6": "unet",
-        "coarse": "stack_unet"
+        "2": "seresunet",
+        "3": "deeplabv3",
+        "4": "deeplabv3",
+        "5": "seresunet",
+        "6": "seresunet",
+        "coarse": "unet"
     }
 
     labels = {
-        #"0": "Bg",
         "1": "RightLung",
         "2": "LeftLung",
         "3": "Heart",
         "4": "Trachea",
         "5": "Esophagus",
-        "6": "SpinalCord"
+        "6": "SpinalCord",
+        #"coarse":"coarse"
+    }
+    
+    class_weights = {
+        "Bg": 1,
+        "LeftLung": 1,
+        "RightLung": 1,
+        "Heart": 1,
+        "Esophagus": 1,
+        "Trachea": 1,
+        "SpinalCord": 1
     }
     
     db_name = "StructSeg2019_Task3_Thoracic_OAR"
@@ -53,20 +63,21 @@ if __name__ == "__main__":
     deep_supervision = False
     dropout = True
     fine_tuning = False
-    batch_size = 1
+    batch_size = 2
     scale = 1
     augmentation = False
     feature_extraction = False
     epochs = 500
     validation_size = 0.2
     multi_loss_weights=[1, 1] # [ce, dice]
-    channels = 6
+    channels = 6*1 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
     finder_lr_iterations = 2000
     find_optimal_lr = False
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
     telegram = False
     mod_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
+    crop_size = (320,320)
 
     if mod_type == "Onex1StackConv_Unet" or mod_type == "LogReg_thresholding":
         assert not deep_supervision, "Onex1StackConv_Unet/LogReg_thresholding doesn't have deep supervision" 
@@ -74,23 +85,29 @@ if __name__ == "__main__":
 
     nets = {}
     for label in labels.keys():
+        if 'coarse' in label:
+            n_c = n_classes
+        else:
+            n_c=1
+            
         paths.set_pretrained_model(load_dir_list[label])
-
-        nets[label] = build_net(model=models[label], n_classes=1, channels=1,
+        nets[label] = build_net(model=models[label], n_classes=n_c, channels=1,
                                 load_inference=True, load_dir=paths.dir_pretrained_model)
 
     if db_prediction_creation:
         create_combined_dataset(nets=nets, scale=scale, paths=paths, labels=labels)
 
 
-    net = build_net(model=mod_type, n_classes=n_classes, channels=channels, load_inference=False, deep_supervision=deep_supervision)
+    net = build_net(model=mod_type, n_classes=n_classes, channels=channels, load_inference=False, 
+                    deep_supervision=deep_supervision)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                 batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,
                                 labels=labels, network=net, deep_supervision=deep_supervision, 
                                 lr=lr, patience=patience, epochs=epochs,
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
-                                dataset_name=db_name, optimizer_type=optimizer, stacking=True, telegram=telegram)
+                                dataset_name=db_name, optimizer_type=optimizer, stacking=True, telegram=telegram, 
+                                class_weights=class_weights, crop_size=crop_size)
 
 
     if find_optimal_lr:

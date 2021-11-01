@@ -9,6 +9,7 @@ from OaR_segmentation.network_architecture.deeplab_v3p import build_deeplabV3
 from OaR_segmentation.network_architecture.last_layer_fusion import build_LastLayerFusionNet
 from OaR_segmentation.network_architecture.Onex1ConvNet import build_Onex1StackConv_Unet
 from OaR_segmentation.network_architecture.logreg_thresholding import build_LogReg_thresholding
+from torchsummary import summary
 
 # create a net for every specified model
 def build_net(model, channels, n_classes, in_features = None, finetuning=False, load_dir=None, feature_extraction=False,
@@ -61,6 +62,8 @@ def build_net(model, channels, n_classes, in_features = None, finetuning=False, 
         net = None
         assert net is not None, "WARNING! The specified net doesn't exist"
 
+    #summary(net, (1, 320, 320))
+    
     return net
 
 

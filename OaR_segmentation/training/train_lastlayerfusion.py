@@ -8,7 +8,7 @@ from OaR_segmentation.utilities.paths import Paths
 
 
 
-def run_training():
+if __name__ == '__main__':
 
     labels = {
         "1": "RightLung",
@@ -17,27 +17,26 @@ def run_training():
         "4": "Trachea",
         "5": "Esophagus",
         "6": "SpinalCord",
-        "4_a":"Trachea"
+        #"coarse":"coarse"
     }
 
     load_dir_list = {
-        "1": "10018/model_best.model",
-        "2": "10011/model_best.model",
-        "3": "10025/model_best.model",
-        "4": "10040/model_best.model",
-        "5": "10015/model_best.model",
-        "6": "10034/model_best.model",
-        "4_a":"10052/model_best.model"
+        "1": "10070/model_best.model",
+        "2": "10072/model_best.model",
+        "3": "10051/model_best.model",
+        "4": "10053/model_best.model",
+        "5": "10071/model_best.model",
+        "6": "10073/model_best.model",
+        "coarse": "1372/model_best.model"
     }
 
     models_type_list = {
         "1": "seresunet",
-        "2": "unet",
-        "3": "unet",
-        "4": "seresunet",
-        "5": "unet",
-        "6": "unet",
-        "4_a":"deeplabv3",
+        "2": "seresunet",
+        "3": "deeplabv3",
+        "4": "deeplabv3",
+        "5": "seresunet",
+        "6": "seresunet",
         "coarse": "unet"
     }
 
@@ -48,7 +47,17 @@ def run_training():
         "4": False,
         "5": False,
         "6": False,
-        "4_a": False
+        "coarse": False
+    }
+    
+    class_weights = {
+        "Bg": 1,
+        "LeftLung": 1,
+        "RightLung": 1,
+        "Heart": 1,
+        "Esophagus": 1,
+        "Trachea": 1,
+        "SpinalCord": 1
     }
 
     loss_crit = "crossentropy"  # dice, focal, crossentropy, dc_ce, twersky, jaccard
@@ -72,8 +81,9 @@ def run_training():
     optimizer = "adam"  # adam, rmsprop
     telegram = False
     train_with_reduced_db=False
-    in_features = 64*6 + 256*1 # 64 per ogni unet/resnet, 256 per ogni deeplab
-
+    in_features = 64*4 + 256*2# 64 per ogni unet/resnet, 256 per ogni deeplab
+    crop_size = (320,320)
+    
     # Restore all nets
     nets = {}
     for label in labels.keys():
@@ -88,13 +98,15 @@ def run_training():
 
     # BEGIN TRAINING
     net = build_net(model=model, n_classes=n_classes,
-                    channels=channels, nets=nets, retrain_list=retrain_list, n_labels=len(labels), in_features=in_features)
+                    channels=channels, nets=nets, retrain_list=retrain_list, 
+                    n_labels=len(labels), in_features=in_features)
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                  batch_size=batch_size, loss_criterion=loss_crit, val_percent=val,
                                  labels=labels, network=net, lr=lr, patience=patience, epochs=epochs,
                                  multi_loss_weights=multi_loss_weights, platform=platform,
-                                 dataset_name=db_name, optimizer_type=optimizer, telegram=telegram, lastlayer_fusion=True, train_with_reduced_db=train_with_reduced_db)
+                                 dataset_name=db_name, optimizer_type=optimizer, telegram=telegram, lastlayer_fusion=True, 
+                                 train_with_reduced_db=train_with_reduced_db, class_weights=class_weights, crop_size=crop_size)
 
     if find_optimal_lr:
         trainer_temp = deepcopy(trainer)
@@ -109,5 +121,3 @@ def run_training():
     trainer.run_training()
 
 
-if __name__ == '__main__':
-    run_training()

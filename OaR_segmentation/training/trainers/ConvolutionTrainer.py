@@ -18,8 +18,8 @@ import telegram_send
 
 class ConvolutionTrainer(NetworkTrainer):
     def __init__(self, paths, image_scale, augmentation, batch_size, loss_criterion, val_percent, labels, network, 
-                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, lastlayer_fusion=False, 
-                 telegram=False, deep_supervision = False, stacking = False, deterministic=False, fp16=True, train_with_reduced_db=False):
+                 lr, epochs, patience, multi_loss_weights, platform, dataset_name, optimizer_type, crop_size, lastlayer_fusion=False, 
+                 telegram=False, deep_supervision = False, stacking = False, deterministic=False, fp16=True, train_with_reduced_db=False, class_weights = None):
         super(ConvolutionTrainer, self).__init__(deterministic=deterministic, fp16=fp16)
 
         self.paths = paths
@@ -32,7 +32,7 @@ class ConvolutionTrainer(NetworkTrainer):
         self.output_folder = paths.dir_plots
         self.loss_criterion = loss_criterion
         self.multi_loss_weights = multi_loss_weights
-        self.class_weights = None
+        self.class_weights = class_weights
         self.dataset_directory = paths.dir_database
         self.lr = lr
         self.platform = platform
@@ -55,6 +55,7 @@ class ConvolutionTrainer(NetworkTrainer):
         self.lr_scheduler_patience = 4
         self.initial_lr = 3e-4
         self.weight_decay = 1e-8
+        self.crop_size = crop_size
 
     def set_experiment_number(self):
         name = f"experiments_{self.platform}"
@@ -69,12 +70,10 @@ class ConvolutionTrainer(NetworkTrainer):
     def initialize(self, training=True):
         super(ConvolutionTrainer, self).initialize(training)
 
-        self.class_weights = [int(
-            x) / 100 for x in json.load(open(self.paths.json_file_database))["weights"].values()]
-
         self.set_experiment_number()
         self.loss = build_loss(loss_criterion=self.loss_criterion, class_weights=self.class_weights,
-                               ce_dc_weights=self.multi_loss_weights, deep_supervision=self.deep_supervision, n_classes=self.network.n_classes)
+                               ce_dc_weights=self.multi_loss_weights, deep_supervision=self.deep_supervision,
+                               n_classes=self.network.n_classes)
         self.initialize_optimizer_and_scheduler()
         self.load_dataset()
 
@@ -121,18 +120,18 @@ class ConvolutionTrainer(NetworkTrainer):
         if self.stacking:
             self.dataset = HDF5DatasetStacking(scale=self.img_scale, hdf5_db_dir=self.paths.hdf5_stacking,
                                     labels=self.labels, augmentation=self.augmentation, 
-                                    channels=self.network.n_channels)
+                                    channels=self.network.n_channels, crop_size=self.crop_size)
         elif self.lastlayer_fusion:
             self.dataset = HDF5lastlayer(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
                                     labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels,
-                                    train_with_reduced_db=self.train_with_reduced_db)
+                                    train_with_reduced_db=self.train_with_reduced_db, crop_size=self.crop_size)
 
         else:
             self.dataset = HDF5Dataset(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
                                     labels=self.labels, augmentation=self.augmentation, channels=self.network.n_channels,
-                                    train_with_reduced_db=self.train_with_reduced_db)
+                                    train_with_reduced_db=self.train_with_reduced_db, crop_size=self.crop_size)
 
         n_val = int(len(self.dataset) * self.val_percent)
         n_train = len(self.dataset) - n_val

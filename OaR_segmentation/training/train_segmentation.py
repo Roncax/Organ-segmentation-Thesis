@@ -39,10 +39,20 @@ def run_training():
                 "coarse": "crossentropy"
                 }
 
-    model = "deeplabv3"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
+    class_weights = {
+        "Bg": 0,
+        "LeftLung": 1,
+        "RightLung": 0.8,
+        "Heart": 1.8,
+        "Esophagus": 4.7,
+        "Trachea": 4.3,
+        "SpinalCord": 4
+    }
+
+    model = "unet"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
     db_name = "StructSeg2019_Task3_Thoracic_OAR"   #SegTHOR, StructSeg2019_Task3_Thoracic_OAR
     epochs = 500  # max number of epochs
-    batch_size = 2 # (>2 mandatory for deeplabv3)
+    batch_size = 1 # (>2 mandatory for deeplabv3)
     lr = 1e-3
     val = 0.20  
     patience = 5  
@@ -55,7 +65,7 @@ def run_training():
     channels = 1 # 1 for grayscale, rgb not supoported
     multi_loss_weights = [1, 1] # [ce, dice]
     platform = "local"  # local, gradient, polimi
-    n_classes = 1   # 1 if binary, n+1 if n organ
+    n_classes = 7   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
     find_optimal_lr = False
@@ -63,6 +73,7 @@ def run_training():
     optimizer = "adam" #adam, rmsprop
     telegram = False
     train_with_reduced_db = False
+    crop_size = (320,320)
 
 
     # INITIAL CHECKS
@@ -98,7 +109,7 @@ def run_training():
                                 lr=lr, patience=patience, epochs=epochs,
                                 multi_loss_weights=multi_loss_weights, platform=platform, 
                                 dataset_name=db_name,optimizer_type=optimizer, telegram=telegram, 
-                                train_with_reduced_db=train_with_reduced_db)
+                                train_with_reduced_db=train_with_reduced_db, class_weights=class_weights, crop_size=crop_size)
     
 
     if find_optimal_lr:

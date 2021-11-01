@@ -1,5 +1,10 @@
+import os
 import sys
+
 sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/')
+from OaR_segmentation.preprocessing.ct_levels_enhance import setDicomWinWidthWinCenter
+from OaR_segmentation.preprocessing.preprocess_dataset import preprocess_test
+
 from tqdm import trange
 from os import path
 
@@ -37,8 +42,8 @@ def plot_HU(tr_HU, test_HU, paths):
     hist = sns.histplot(data=data_test, color='red', alpha=0.4, bins=70,binwidth = 1, kde=True)
     hist.set_xlim(left=-1050)
     hist.set_ylim(top = 4000)
-    plt.xlabel('HU value')
-    plt.ylabel('Count')
+    plt.xlabel('HU mean value')
+    plt.ylabel('Pixel count')
     plt.savefig(paths.dir_database+"/HU_analysis.png")
     
 def find_organ_percentage(dataset, labels):
@@ -70,35 +75,17 @@ def find_organ_percentage(dataset, labels):
             
     return organ_percent
 
-def plot_organ_percentage(tr, test, paths):
-    # fig, axs = plt.subplots(2, 2, figsize=(14,10))
+def plot_organ_percentage(db, paths):
+    
+    plt.pie([db['0'],100-db['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')    
+    plt.savefig(paths.dir_database+"/bg_percentage.png")
+    plt.close()
 
-    # fig.suptitle('Training and Test Organ Percentages')
-    
-    
-    # axs[0,0].pie([tr['0'],100-tr['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
-    # axs[0,0].set_title('Training dataset')
-    # axs[0,1].pie([test['0'],100-test['0'] ], labels=['Background', 'Others'], autopct='%1.1f%%')
-    # axs[0,1].set_title('Test dataset')
-    
-    
-    data_bg= [[tr['0']],[test['0']]]
-    data_others = [100-tr['0'],100-test['0']]
-    
-    #sns.barplot(data=[100-tr['0'],100-test['0']], color = 'blue')
-    sns.barplot(data= data_bg,y=['Train', 'Test'], color='red')
-    plt.xlabel('Percentages')
-    plt.ylabel('Dataset')
-    # tr.pop('0')
-    # test.pop('0')
-    # axs[1,0].pie(tr.values(), labels=tr.keys() , autopct='%1.1f%%')
-    # axs[1,1].pie(test.values(), labels=test.keys(), autopct='%1.1f%%')
-
-    
-
-    #plt.show()
-    plt.savefig(paths.dir_database+"/Organ_percentage_analysis.png")
-    #plt.close()
+    db.pop('0')    
+    plt.pie(db.values(), labels=db.keys() , autopct='%1.1f%%')
+    plt.pie(db.values(), labels=db.keys(), autopct='%1.1f%%')
+    plt.savefig(paths.dir_database+"/Organ_percentage.png")
+    plt.close()
     
     
 def find_organ_number(dataset, labels):
@@ -107,7 +94,7 @@ def find_organ_number(dataset, labels):
     organ_num = None
     with trange(len(gen), unit='batch', leave=False) as tbar:
         for batch in gen:
-            mask = batch['mask'].detach().squeeze().cpu().numpy()
+            mask = batch['mask'].squeeze()
             
             if organ_num is None:
                 organ_num={}
@@ -141,9 +128,35 @@ def plot_organ_number(tr, test, paths):
     #plt.show()
     plt.savefig(paths.dir_database+"/OrganxImage_analysis.png")
     plt.close()
+    
+def plot_img(db, paths):
+    n_train = len(db)
+    db_gen = DataLoader(db, batch_size=1, shuffle=True, num_workers=8, pin_memory=True,drop_last=True)
+    
+    for data in db_gen:
+        slice = data['img'].squeeze()
+        mask = data['mask'].squeeze()
+        id_=data['id']
+        
+        s = id_[0].split("/")[-1]
+        vol = id_[0].split("/")[2]
+        
+        if vol == 'volume_Patient_05':
+            folder = f"{paths.dir_database}/cropped_images"
+            
+            slice = setDicomWinWidthWinCenter(img_data=slice, winwidth=1800, wincenter=-500)         
+            slice = preprocess_test(img=slice, augmentation=False, crop_size=(320,320)).squeeze()
 
-def save_imges_from_dicom():
-    pass
+            os.makedirs(folder, exist_ok=True)
+            plt.imshow(slice, cmap='gray')
+            # plt.imshow(mask, cmap='nipy_spectral', alpha=0.5)
+            # plt.colorbar()
+            plt.axis('off')  # clear x-axis and y-axis
+            plt.savefig(f"{folder}/{s}.png")
+            plt.close()
+            
+            
+            
 
 if __name__ == '__main__':
     
@@ -162,23 +175,16 @@ if __name__ == '__main__':
     
     tr_dataset = HDF5Exploration(hdf5_db_dir=paths.hdf5_db, mode='train',  db_info=json.load(open(paths.json_file_database)))
     test_dataset = HDF5Exploration(hdf5_db_dir=paths.hdf5_db, mode='test',  db_info=json.load(open(paths.json_file_database)))
+    all_db =  HDF5Exploration(hdf5_db_dir=paths.hdf5_db, mode='all',  db_info=json.load(open(paths.json_file_database)))
 
     # HU analysis
     # training_HU = find_HU_composition(tr_dataset)
     # test_HU = find_HU_composition(test_dataset)
-    
     # plot_HU(training_HU, test_HU, paths=paths)
     
     # % organ analysis
-    training_perc = find_organ_percentage(tr_dataset, labels=labels)
-    test_perc = find_organ_percentage(test_dataset, labels=labels)
-
-    plot_organ_percentage(training_perc, test_perc, paths=paths)
+    perc = find_organ_percentage(tr_dataset, labels=labels)
+    plot_organ_percentage(perc, paths=paths)
     
-    # # Organ x image analysis
-    # training_num = find_organ_number(tr_dataset, labels=labels)
-    # test_num = find_organ_number(test_dataset, labels=labels)
-
-    # plot_organ_number(training_num, test_num, paths=paths)
-
+    #plot_img(all_db, paths)
     

@@ -18,11 +18,17 @@ class HDF5Exploration(Dataset):
         
         db = h5py.File(self.db_dir, 'r')
         # upload data from the hdf5 sctructure
-        for volumes in db[f'{self.db_info["name"]}/{mode}'].keys():
-            ks = db[f'{self.db_info["name"]}/{mode}/{volumes}/image'].keys()
-            for slice in ks:
-                self.ids_img.append(f'{self.db_info["name"]}/{mode}/{volumes}/image/{slice}')
-                self.ids_mask.append(f'{self.db_info["name"]}/{mode}/{volumes}/mask/{slice}')
+        if mode == 'all':
+            mode_list = ['test', 'train']
+        else:
+            mode_list=[mode]
+            
+        for m in mode_list:
+            for volumes in db[f'{self.db_info["name"]}/{m}'].keys():
+                ks = db[f'{self.db_info["name"]}/{m}/{volumes}/image'].keys()
+                for slice in ks:
+                    self.ids_img.append(f'{self.db_info["name"]}/{m}/{volumes}/image/{slice}')
+                    self.ids_mask.append(f'{self.db_info["name"]}/{m}/{volumes}/mask/{slice}')
 
         assert len(self.ids_img) == len(self.ids_mask), f"Error in the number of mask {len(self.ids_mask)} and images{len(self.ids_img)}"
 
@@ -38,7 +44,7 @@ class HDF5Exploration(Dataset):
         assert img.size == mask.size,f'Image and mask {idx} should be the same size, but are {img.size} and {mask.size}'
         
         return {
-            'img':img,
-            'mask': mask,
+            'img':img.squeeze(),
+            'mask': mask.squeeze(),
             'id': self.ids_img[idx],
         }

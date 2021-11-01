@@ -15,6 +15,7 @@ Structseg:
 "5": "Esophagus",
 "6": "SpinalCord"
 
+
 DBs: SegTHOR, StructSeg2019_Task3_Thoracic_OAR
 
 # Various

@@ -8,6 +8,7 @@ from OaR_segmentation.inference.predictors.StackingArgmaxPredictor import Stacki
 from OaR_segmentation.inference.predictors.StandardPredictor import StandardPredictor
 from OaR_segmentation.inference.predictors.LastlayerPredictor import LastLayerPredictor
 from OaR_segmentation.utilities.paths import Paths
+from OaR_segmentation.utilities.populate_csv import populate_csv
 
 
 if __name__ == "__main__":
@@ -19,9 +20,7 @@ if __name__ == "__main__":
         "4": "10040/model_best.model",
         "5": "10015/model_best.model",
         "6": "10034/model_best.model",
-        "5_a": "10071/model_best.model",
-        "coarse":"10046/model_best.model"
-        }
+        'coarse':'10100/model_best.model'      }
     
     models_type_list = {
         "1": "seresunet",
@@ -30,9 +29,7 @@ if __name__ == "__main__":
         "4": "seresunet",
         "5": "unet",
         "6": "unet",
-        "5_a": "seresunet",
-        "coarse":"deeplabv3"
-        }
+        'coarse':'unet'}
 
     labels = {
         "1": "RightLung",
@@ -40,8 +37,8 @@ if __name__ == "__main__":
         "3": "Heart",
         "4": "Trachea",
         "5": "Esophagus",
-        "6": "SpinalCord",
-        "5_a": "Esophagus"
+        "6": "SpinalCord" ,
+        'coarse':'coarse'
         }
     
     predict_labels = {
@@ -55,17 +52,17 @@ if __name__ == "__main__":
     
     db_name = "StructSeg2019_Task3_Thoracic_OAR"
     platform = "local"  # local, colab, polimi
-    load_dir_metamodel = "1428/model_best.model"
+    load_dir_metamodel = "1483/model_best.model"
     n_classes = 7   # 1 if binary, n+1 if n organ
     scale = 1
     mask_threshold = 0.5
     channels = 1
-    metrics_list =['Dice', 'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
+    metrics_list =['Dice', 'Precision', 'Recall' ,  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
     stacking_mode = "none" #none, argmax, convolutional, lastlayer_fusion
-    convolutional_meta_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
+    convolutional_meta_type = "Onex1StackConv_Unet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
     logistic_regression_weights = False
     logistic_regression_dir = '1/best_model.model'
-    in_features = 64*7  # 64 per ogni unet/resnet, 256 per ogni deeplab
+    in_features = 64*6 + 256*1  # 64 per ogni unet/resnet, 256 per ogni deeplab
 
     
     # PATHS management
@@ -115,4 +112,6 @@ if __name__ == "__main__":
     predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], 
                                    experiment_num=experiment_num, dict_test_info=dict_test_info,
                                    labels=predict_labels, gif_viz=True)
+    
+    populate_csv(str(experiment_num), predict_labels, metrics_list)
         

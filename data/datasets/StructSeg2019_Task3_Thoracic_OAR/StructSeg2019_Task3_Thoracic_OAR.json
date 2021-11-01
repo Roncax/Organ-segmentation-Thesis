@@ -62,15 +62,6 @@
             255
         ]
     },
-    "weights": {
-        "Bg": 100,
-        "LeftLung": 100,
-        "RightLung": 100,
-        "Heart": 100,
-        "Esophagus": 80,
-        "Trachea": 70,
-        "SpinalCord": 100
-    },
     "CTwindow_level": {
         "coarse": -500,
         "LeftLung": -500,

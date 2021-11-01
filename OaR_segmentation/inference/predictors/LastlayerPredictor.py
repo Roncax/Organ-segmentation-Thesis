@@ -86,7 +86,7 @@ class LastLayerPredictor(Predictor):
                     probs = F.softmax(probs, dim=1)
                     probs = probs.squeeze().cpu().numpy()
 
-                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0))
+                    probs = self.combine_predictions(output_masks=probs)
 
                     # TESTING
                     #mask = mask.squeeze().cpu().numpy()

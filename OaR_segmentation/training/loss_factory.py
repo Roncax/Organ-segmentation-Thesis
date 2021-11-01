@@ -6,7 +6,10 @@ import segmentation_models_pytorch.losses as losses
 def build_loss(loss_criterion, deep_supervision, n_classes, class_weights=None, ce_dc_weights=None):
     
     if class_weights is not None:
-        weights = (torch.FloatTensor(class_weights).to(device="cuda").unsqueeze(dim=0))
+        c = list(class_weights.values())
+        weights = (torch.FloatTensor(c).to(device="cuda").unsqueeze(dim=0))
+    else:
+        print("WARNING, crossentropy weights are NONE")
 
     mode = losses.constants.BINARY_MODE if n_classes == 1 else losses.constants.MULTICLASS_MODE
 
@@ -14,7 +17,7 @@ def build_loss(loss_criterion, deep_supervision, n_classes, class_weights=None, 
         "dice": losses.DiceLoss(mode=mode),
         "crossentropy": nn.CrossEntropyLoss(weight=weights) if mode=="multiclass" else nn.BCEWithLogitsLoss(),
         "focal": losses.FocalLoss(mode=mode),
-        "dc_ce": BCE_DC_loss(ce_dc_weights=ce_dc_weights, mode = mode, class_weights=weights),
+        "dc_ce": CE_DC_loss(ce_dc_weights=ce_dc_weights, mode = mode, class_weights=weights),
         "twersky": losses.TverskyLoss(mode=mode, alpha=0.3, beta=0.7), 
         "jaccard": losses.JaccardLoss(mode=mode)
     }
@@ -56,10 +59,10 @@ class MultipleOutputLoss2(nn.Module):
                 l += weights[i] * self.loss(x[i], y)
         return l
 
-class BCE_DC_loss(nn.Module):
+class CE_DC_loss(nn.Module):
 
     def __init__(self,ce_dc_weights, mode, class_weights):
-        super(BCE_DC_loss, self).__init__()
+        super(CE_DC_loss, self).__init__()
 
         self.weight_ce = ce_dc_weights[0]
         self.weight_dice = ce_dc_weights[1]

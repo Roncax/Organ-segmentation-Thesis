@@ -70,7 +70,7 @@ class StackingArgmaxPredictor(Predictor):
                         final_array_prediction = self.apply_logistic_weights(final_array_prediction)
                     
                     probs = final_array_prediction
-                    probs = F.softmax(probs, dim=1)
+                    #probs = F.softmax(probs, dim=1)
                     full_mask = probs.squeeze().cpu().detach().numpy()
                     comb_img = self.combine_predictions(output_masks=full_mask)
                     

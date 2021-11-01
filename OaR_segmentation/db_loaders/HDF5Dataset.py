@@ -9,7 +9,7 @@ from torch.utils.data import Dataset
 
 class HDF5Dataset(Dataset):
     def __init__(self, scale: float, db_info: dict, mode: str, hdf5_db_dir: str, labels: dict,  
-                 channels, augmentation=False, multiclass_test = False, db_set_train=False, train_with_reduced_db=False):
+                 channels, augmentation=False, multiclass_test = False, db_set_train=False, train_with_reduced_db=False, crop_size=None):
         self.db_info = db_info
         self.labels = labels
         self.db_dir = hdf5_db_dir
@@ -19,6 +19,7 @@ class HDF5Dataset(Dataset):
         self.channels = channels
         self.multiclass_test = multiclass_test
         self.train_with_reduced_db = train_with_reduced_db
+        self.crop_size = crop_size
 
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
         
@@ -74,8 +75,6 @@ class HDF5Dataset(Dataset):
             if len(self.labels.items()) == 1:
 
                 single_label = next(iter(self.labels))
-                crop = self.db_info["crop_scale"][self.labels[single_label]]
-                crop_size = (crop, crop)
                 img_coarse = setDicomWinWidthWinCenter(img_data=img,
                                                 winwidth=self.db_info["CTwindow_width"][self.labels[single_label]],
                                                 wincenter=self.db_info["CTwindow_level"][self.labels[single_label]])
@@ -83,15 +82,14 @@ class HDF5Dataset(Dataset):
                 mask = mask_gt
 
             else:
-                crop = self.db_info["crop_scale"]["coarse"]
-                crop_size = (crop, crop)
+
                 img_coarse = setDicomWinWidthWinCenter(img_data=img,
                                                 winwidth=self.db_info["CTwindow_width"]["coarse"],
                                                 wincenter=self.db_info["CTwindow_level"]["coarse"])
 
             img_coarse = np.uint8(img_coarse)
             img_coarse, mask_gt = preprocess_segmentation(img=img_coarse, mask=mask, scale=self.scale,
-                                                          augmentation=self.augmentation, crop_size=crop_size)
+                                                          augmentation=self.augmentation, crop_size=self.crop_size)
         
         # TESTING and STACKING PREPROCESSING
         # Adjust the level of ct for fine segmentation (all organs in a labels)
@@ -117,7 +115,7 @@ class HDF5Dataset(Dataset):
                                                                 winwidth=self.db_info["CTwindow_width"][self.labels[k]],
                                                                 wincenter=self.db_info["CTwindow_level"][self.labels[k]])
                     img_single_organ = np.uint8(img_single_organ)
-                    img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale)
+                    img_single_organ = prepare_inference(img=img_single_organ, scale=self.scale, normalize=True, crop_size=self.crop_size)
                     img_single_organ = torch.from_numpy(img_single_organ).type(torch.FloatTensor)
                     img_dict[key] = img_single_organ
                     
@@ -126,8 +124,8 @@ class HDF5Dataset(Dataset):
 
             # Some preprocessing to the images
             mask_gt = mask
-            img_coarse, mask_gt = prepare_inference(img=img_coarse, mask=mask_gt, scale=self.scale)
-            
+            img_coarse = prepare_inference(img=img_coarse, scale=self.scale, normalize=True, crop_size=self.crop_size)
+            mask_gt = prepare_inference(img=mask_gt, scale=self.scale, normalize=False, crop_size=self.crop_size)
 
         return {
             'image_coarse': torch.from_numpy(img_coarse).type(torch.FloatTensor),

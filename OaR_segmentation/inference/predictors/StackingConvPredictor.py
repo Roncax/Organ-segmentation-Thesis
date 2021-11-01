@@ -75,7 +75,7 @@ class StackingConvPredictor(Predictor):
                         if final_array_prediction is None:
                             final_array_prediction = output
                         else:
-                            final_array_prediction = torch.cat((final_array_prediction, output), dim=1)
+                            final_array_prediction = torch.cat((output,final_array_prediction), dim=1)
      
 
                     final_array_prediction = final_array_prediction.to(device="cuda", dtype=torch.float32)
@@ -92,7 +92,7 @@ class StackingConvPredictor(Predictor):
                     probs = F.softmax(probs, dim=1)
                     probs = probs.squeeze().cpu().numpy()
 
-                    probs = self.combine_predictions(output_masks=np.delete(probs, 0, 0), threshold=0.5)
+                    probs = self.combine_predictions(output_masks=probs)
                     
                     
                     # probs = stacking_output 

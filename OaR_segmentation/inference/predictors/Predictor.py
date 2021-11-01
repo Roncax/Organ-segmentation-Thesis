@@ -60,7 +60,7 @@ class Predictor(object):
         output_masks[output_masks != 1] = 0
 
         for i in range(np.shape(output_masks)[0]):
-            combination_matrix[output_masks[i,:,:] == 1] = i+1 #on single dimension - single image
+            combination_matrix[output_masks[i,:,:] == 1] = i #on single dimension - single image
             #full_output_mask[i, full_output_mask[i, :, :] == 1] = i+1 # on multiple dimension - multiple images 
 
         return combination_matrix
@@ -108,23 +108,29 @@ class Predictor(object):
                                 plot = prediction_plot(img=slice_test_img, mask=msk, ground_truth=gt)
                                 
                                 #fig, axs = plt.subplots(1, 2)
-                                
-                                os.makedirs(f"{self.paths.dir_plots}/{sample_gif_name}_mask_images", exist_ok=True)
+
+                                os.makedirs(
+                                    f"{self.paths.dir_plots}/{sample_gif_name}_mask_images", exist_ok=True)
                                 plt.imshow(slice_test_img, cmap='gray')
-                                plt.imshow(slice_pred_mask, cmap='nipy_spectral', alpha=0.5) 
+                                plt.imshow(slice_pred_mask,
+                                           cmap='nipy_spectral', alpha=0.5)
                                 plt.colorbar()
                                 plt.axis('off')  # clear x-axis and y-axis
-                                plt.savefig(self.paths.dir_plots + f"/{sample_gif_name}_mask_images/{slice}.png")
+                                plt.savefig(
+                                    self.paths.dir_plots + f"/{sample_gif_name}_mask_images/{slice}.png")
                                 plt.close()
-                                
-                                os.makedirs(f"{self.paths.dir_plots}/{sample_gif_name}_bt_images", exist_ok=True)
-                                plt.imshow(slice_test_img, cmap='gray')
-                                plt.imshow(slice_gt_mask, cmap='nipy_spectral', alpha=0.5) 
-                                plt.colorbar()
-                                plt.axis('off')  # clear x-axis and y-axis
-                                
-                                plt.savefig(self.paths.dir_plots + f"/{sample_gif_name}_bt_images/{slice}.png")
-                                plt.close()
+
+                                # os.makedirs(
+                                #     f"{self.paths.dir_plots}/{sample_gif_name}_bt_images", exist_ok=True)
+                                # plt.imshow(slice_test_img, cmap='gray')
+                                # plt.imshow(slice_gt_mask,
+                                #            cmap='nipy_spectral', alpha=0.5)
+                                # plt.colorbar()
+                                # plt.axis('off')  # clear x-axis and y-axis
+
+                                # plt.savefig(
+                                #     self.paths.dir_plots + f"/{sample_gif_name}_bt_images/{slice}.png")
+                                # plt.close()
                                 
                                 
                                 vol.append(plot)

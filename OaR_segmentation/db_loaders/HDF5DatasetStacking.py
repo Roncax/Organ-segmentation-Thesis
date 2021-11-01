@@ -7,13 +7,14 @@ from OaR_segmentation.preprocessing.preprocess_dataset import *
 
 
 class HDF5DatasetStacking(Dataset):
-    def __init__(self, scale: float, hdf5_db_dir, labels: dict,  channels, augmentation=False,):
+    def __init__(self, scale: float, hdf5_db_dir, labels: dict,  channels, augmentation=False, crop_size=None):
 
         self.labels = labels
         self.db_dir = hdf5_db_dir
         self.scale = scale
         self.augmentation = augmentation #todo provare anche con augmentations
         self.channels = channels
+        self.crop_size = crop_size
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
 
         self.ids_mask = []
@@ -35,7 +36,11 @@ class HDF5DatasetStacking(Dataset):
         final_array = None
         for mask_name in masks.keys():
             if mask_name != "gt":
-                t_mask_dict = prepare_inference(mask=masks[mask_name], scale=self.scale)
+                
+                if "coarse" in mask_name:
+                    t_mask_dict = prepare_inference_multiclass(img=masks[mask_name], scale=self.scale, normalize=True, crop_size=self.crop_size)
+                else:
+                    t_mask_dict = prepare_inference(img=masks[mask_name], scale=self.scale, normalize=True, crop_size=self.crop_size)
                 
                 if final_array is None:
                     final_array = t_mask_dict
@@ -43,7 +48,7 @@ class HDF5DatasetStacking(Dataset):
                     final_array = np.concatenate((final_array, t_mask_dict), axis=0)
                     
             else:
-                gt_mask = prepare_inference(mask=masks[mask_name], scale=self.scale)
+                gt_mask = prepare_inference(img=masks[mask_name], scale=self.scale, normalize=False, crop_size=self.crop_size)
             
                 
         return {

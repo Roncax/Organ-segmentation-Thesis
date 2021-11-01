@@ -62,7 +62,7 @@ class StandardPredictor(Predictor):
                     full_mask = probs.squeeze().cpu().detach().numpy()
 
                     if self.net.n_classes > 1:
-                        res = self.combine_predictions(output_masks=np.delete(full_mask, 0, 0))
+                        res = self.combine_predictions(output_masks=full_mask)
                     else:
                         full_mask = full_mask.squeeze()
                         res = full_mask > self.mask_threshold

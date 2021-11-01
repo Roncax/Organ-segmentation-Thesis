@@ -22,11 +22,17 @@ def create_pandas_metrics(json_metrics, metrics_list, labels):
     return pd.DataFrame(temp_dict, index=list(labels.values()))
 
 
+def populate_csv(experiment, labels, metrics_list):
+    file_path="data/results/inference_results.json"
+
+    dict_results = json.load(open(file_path))
+    db = create_pandas_metrics(dict_results[experiment], metrics_list, labels=labels)
+    db.to_csv(f'data/results/plots/{experiment}/to_csv.csv')
+
+
 
 if __name__ == '__main__':
-    
-    file_path="data/results/inference_results.json"
-    experiment = "36"
+    experiment = "55"
     metrics_list =['Dice', 'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
 
     labels = {
@@ -37,8 +43,4 @@ if __name__ == '__main__':
         "5": "Esophagus",
         "6": "SpinalCord"
     }
-
-    dict_results = json.load(open(file_path))
-    db = create_pandas_metrics(dict_results[experiment], metrics_list, labels=labels)
-    db.to_csv(f'data/results/plots/{experiment}/to_csv.csv')
-    print(db)
+    populate_csv(experiment=experiment, labels=labels, metrics_list=metrics_list)
