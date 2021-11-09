@@ -12,7 +12,7 @@ class HDF5DatasetStacking(Dataset):
         self.labels = labels
         self.db_dir = hdf5_db_dir
         self.scale = scale
-        self.augmentation = augmentation #todo provare anche con augmentations
+        self.augmentation = augmentation 
         self.channels = channels
         self.crop_size = crop_size
         assert 0 < scale <= 1, 'Scale must be between 0 and 1'
@@ -32,23 +32,21 @@ class HDF5DatasetStacking(Dataset):
         db = h5py.File(self.db_dir, 'r')
         masks = db[self.ids_mask[idx]] # "n/organ"
         
-        #
         final_array = None
-        for mask_name in masks.keys():
-            if mask_name != "gt":
-                
-                if "coarse" in mask_name:
-                    t_mask_dict = prepare_inference_multiclass(img=masks[mask_name], scale=self.scale, normalize=True, crop_size=self.crop_size)
-                else:
-                    t_mask_dict = prepare_inference(img=masks[mask_name], scale=self.scale, normalize=True, crop_size=self.crop_size)
-                
-                if final_array is None:
-                    final_array = t_mask_dict
-                else:
-                    final_array = np.concatenate((final_array, t_mask_dict), axis=0)
-                    
+        
+        for label in self.labels.keys():
+            gt_mask = prepare_inference(img=masks["gt"], scale=self.scale, normalize=False, crop_size=self.crop_size)
+
+            if "coarse" in label:
+                t_mask_dict = prepare_inference_multiclass(img=masks[label], scale=self.scale, normalize=False, crop_size=self.crop_size)
             else:
-                gt_mask = prepare_inference(img=masks[mask_name], scale=self.scale, normalize=False, crop_size=self.crop_size)
+                t_mask_dict = prepare_inference(img=masks[label], scale=self.scale, normalize=False, crop_size=self.crop_size)
+            
+            
+            if final_array is None:
+                final_array = t_mask_dict
+            else:
+                final_array = np.concatenate((final_array, t_mask_dict), axis=0)
             
                 
         return {

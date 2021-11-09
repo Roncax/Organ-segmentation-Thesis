@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import json
 import numpy as np
 import seaborn as sns
+import albumentations as A
 
 
 def find_HU_composition(dataset):
@@ -154,8 +155,46 @@ def plot_img(db, paths):
             plt.axis('off')  # clear x-axis and y-axis
             plt.savefig(f"{folder}/{s}.png")
             plt.close()
-            
-            
+
+def plt_augmentations(db, paths):
+    db_gen = DataLoader(db, batch_size=1, shuffle=True, num_workers=8, pin_memory=True,drop_last=True)
+    for data in db_gen:
+        slice = data['img'].squeeze().numpy()
+        mask = data['mask'].squeeze().numpy()        
+        
+        f, axarr = plt.subplots(2, 2, figsize=(15,15))
+        
+        transform = A.Compose([
+        #A.ElasticTransform(p=1, alpha=120 * 0.25, sigma=120 * 0.4, alpha_affine=120 * 0.4),
+        #A.GridDistortion(p=1),
+        #A.RandomScale(scale_limit=0.05, p=0.5),
+        A.Rotate(limit=10, p=0.5),
+        # A.ShiftScaleRotate(shift_limit=0, scale_limit=0.1, rotate_limit=10, p=0.5),
+        # A.Blur(blur_limit=7, always_apply=False, p=0.5),
+        #A.GaussNoise(var_limit=(0, 10), p=0.5),
+        ])
+
+        transformed = transform(image=slice, mask=mask)
+        slice_t = transformed['image']
+        mask_t = transformed['mask']
+
+        axarr[0,0].imshow(slice, cmap='gray')
+        axarr[0,0].axis('off')  # clear x-axis and y-axis
+        # axarr[0,1].imshow(slice, cmap='gray')
+        # axarr[0,1].imshow(mask,cmap='nipy_spectral', alpha=0.5 )
+        # axarr[0,1].axis('off')  # clear x-axis and y-axis
+        axarr[0,1].imshow(mask, cmap='nipy_spectral')
+        axarr[0,1].axis('off')  # clear x-axis and y-axis
+        
+        axarr[1,0].imshow(slice_t, cmap='gray')
+        axarr[1,0].axis('off')  # clear x-axis and y-axis
+        # axarr[1,1].imshow(slice_t, cmap='gray')
+        # axarr[1,1].imshow(mask_t,cmap='nipy_spectral', alpha=0.5 )
+        # axarr[1,1].axis('off')  # clear x-axis and y-axis
+        axarr[1,1].imshow(mask_t, cmap='nipy_spectral')
+        axarr[1,1].axis('off')  # clear x-axis and y-axis
+        
+        plt.show()
             
 
 if __name__ == '__main__':
@@ -183,8 +222,9 @@ if __name__ == '__main__':
     # plot_HU(training_HU, test_HU, paths=paths)
     
     # % organ analysis
-    perc = find_organ_percentage(tr_dataset, labels=labels)
-    plot_organ_percentage(perc, paths=paths)
+    # perc = find_organ_percentage(tr_dataset, labels=labels)
+    # plot_organ_percentage(perc, paths=paths)
     
     #plot_img(all_db, paths)
     
+    plt_augmentations(tr_dataset, paths)

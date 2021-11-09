@@ -1,5 +1,6 @@
 import sys
 sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/')
+from torchsummary import summary
 
 from copy import deepcopy
 from OaR_segmentation.network_architecture.net_factory import build_net
@@ -11,23 +12,27 @@ from OaR_segmentation.utilities.paths import Paths
 if __name__ == '__main__':
 
     labels = {
-        "1": "RightLung",
+      "1": "RightLung",
         "2": "LeftLung",
         "3": "Heart",
         "4": "Trachea",
         "5": "Esophagus",
         "6": "SpinalCord",
-        #"coarse":"coarse"
+        #"coarse":"coarse",
+        #"4_a": "Trachea",
+         #"5_a": "Esophagus"
     }
 
     load_dir_list = {
         "1": "10070/model_best.model",
         "2": "10072/model_best.model",
         "3": "10051/model_best.model",
-        "4": "10053/model_best.model",
+        "4": "10052/model_best.model",
         "5": "10071/model_best.model",
         "6": "10073/model_best.model",
-        "coarse": "1372/model_best.model"
+        "coarse": "10106/model_best.model",
+        "4_a": "10090/model_best.model",
+        "5_a": "10078/model_best.model"
     }
 
     models_type_list = {
@@ -37,7 +42,9 @@ if __name__ == '__main__':
         "4": "deeplabv3",
         "5": "seresunet",
         "6": "seresunet",
-        "coarse": "unet"
+        "coarse": "deeplabv3",
+        "4_a": "unet",
+        "5_a": "deeplabv3"
     }
 
     retrain_list = {
@@ -47,7 +54,9 @@ if __name__ == '__main__':
         "4": False,
         "5": False,
         "6": False,
-        "coarse": False
+        "coarse": False,
+        "4_a": False,
+        "5_a": False
     }
     
     class_weights = {
@@ -100,6 +109,8 @@ if __name__ == '__main__':
     net = build_net(model=model, n_classes=n_classes,
                     channels=channels, nets=nets, retrain_list=retrain_list, 
                     n_labels=len(labels), in_features=in_features)
+
+    #summary(net, (channels, 320, 320))
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                  batch_size=batch_size, loss_criterion=loss_crit, val_percent=val,

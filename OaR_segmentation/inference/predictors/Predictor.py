@@ -22,13 +22,14 @@ from OaR_segmentation.evaluation.metrics import ConfusionMatrix
 
 
 class Predictor(object):
-    def __init__(self, scale, mask_threshold, paths, labels, n_classes, logistic_regression_weights):
+    def __init__(self, scale, mask_threshold, paths, labels, n_classes, logistic_regression_weights, crop_size):
         self.scale = scale
         self.mask_threshold = mask_threshold
         self.paths = paths
         self.labels = labels
         self.n_classes = n_classes
         self.logistic_regression_weights = logistic_regression_weights
+        self.crop_size = crop_size
     
     @abstractmethod
     def initialize(self):
@@ -39,7 +40,7 @@ class Predictor(object):
         pass
     
         
-    def combine_predictions(self, output_masks, threshold = None):
+    def combine_predictions(self, output_masks, threshold = None, background=True):
         """Combine the output masks in one single dimension and threshold it. 
         The returned matrix has value in range (1, shape(output_mask)[0])
 
@@ -60,8 +61,7 @@ class Predictor(object):
         output_masks[output_masks != 1] = 0
 
         for i in range(np.shape(output_masks)[0]):
-            combination_matrix[output_masks[i,:,:] == 1] = i #on single dimension - single image
-            #full_output_mask[i, full_output_mask[i, :, :] == 1] = i+1 # on multiple dimension - multiple images 
+            combination_matrix[output_masks[i,:,:] == 1] = i if background else i+1 #on single dimension - single image
 
         return combination_matrix
     
@@ -94,6 +94,8 @@ class Predictor(object):
                         for slice in sorted(db[f'{db_name}/test/{volume}/image'].keys(),
                                             key=lambda x: int(x.split("_")[1])):
                             slice_pred_mask = db[f'{db_name}/test/{volume}/image/{slice}'][()]
+                            slice_pred_mask = np.pad(slice_pred_mask, (96,96), "constant", constant_values=(0,0))
+                            
                             slice_gt_mask = db_train[f'{db_name}/test/{volume}/mask/{slice}'][()]
                             slice_test_img = db_train[f'{db_name}/test/{volume}/image/{slice}'][()]
 

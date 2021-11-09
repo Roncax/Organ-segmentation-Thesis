@@ -1,5 +1,6 @@
 import sys
 sys.path.append(r'/home/roncax/Git/organ_segmentation_thesis/')
+from torchsummary import summary
 
 
 from OaR_segmentation.utilities.concat_output_prediction import create_combined_dataset
@@ -12,13 +13,15 @@ from copy import deepcopy
 if __name__ == "__main__":
     
     load_dir_list = {
-        "1": "10070/model_best.model",
+         "1": "10070/model_best.model",
         "2": "10072/model_best.model",
         "3": "10051/model_best.model",
-        "4": "10053/model_best.model",
+        "4": "10052/model_best.model",
         "5": "10071/model_best.model",
         "6": "10073/model_best.model",
-        "coarse": "1372/model_best.model"
+        "coarse": "10106/model_best.model",
+        "4_a": "10090/model_best.model",
+        "5_a": "10078/model_best.model"
     }
 
     models = {
@@ -28,17 +31,21 @@ if __name__ == "__main__":
         "4": "deeplabv3",
         "5": "seresunet",
         "6": "seresunet",
-        "coarse": "unet"
+        "coarse": "deeplabv3",
+        "4_a": "unet",
+        "5_a": "deeplabv3"
     }
 
     labels = {
-        "1": "RightLung",
+       "1": "RightLung",
         "2": "LeftLung",
         "3": "Heart",
         "4": "Trachea",
         "5": "Esophagus",
         "6": "SpinalCord",
-        #"coarse":"coarse"
+        #"coarse":"coarse",
+        #"4_a": "Trachea",
+        #"5_a": "Esophagus"
     }
     
     class_weights = {
@@ -64,13 +71,12 @@ if __name__ == "__main__":
     dropout = True
     fine_tuning = False
     batch_size = 2
-    scale = 1
     augmentation = False
     feature_extraction = False
     epochs = 500
     validation_size = 0.2
     multi_loss_weights=[1, 1] # [ce, dice]
-    channels = 6*1 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
+    channels = 6 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
     finder_lr_iterations = 2000
     find_optimal_lr = False
     finder_lr_iterations = 2000
@@ -78,6 +84,8 @@ if __name__ == "__main__":
     telegram = False
     mod_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
     crop_size = (320,320)
+    train_with_reduced_db=True
+
 
     if mod_type == "Onex1StackConv_Unet" or mod_type == "LogReg_thresholding":
         assert not deep_supervision, "Onex1StackConv_Unet/LogReg_thresholding doesn't have deep supervision" 
@@ -95,11 +103,13 @@ if __name__ == "__main__":
                                 load_inference=True, load_dir=paths.dir_pretrained_model)
 
     if db_prediction_creation:
-        create_combined_dataset(nets=nets, scale=scale, paths=paths, labels=labels)
+        create_combined_dataset(nets=nets, scale=scale, paths=paths, labels=labels, crop_size=crop_size, train_with_reduced_db=train_with_reduced_db)
 
 
     net = build_net(model=mod_type, n_classes=n_classes, channels=channels, load_inference=False, 
                     deep_supervision=deep_supervision)
+    summary(net, (channels, 320, 320))
+
 
     trainer = ConvolutionTrainer(paths=paths, image_scale=scale, augmentation=augmentation,
                                 batch_size=batch_size, loss_criterion=loss_criterion, val_percent=validation_size,

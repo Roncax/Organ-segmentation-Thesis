@@ -13,9 +13,9 @@ from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 
 class StackingArgmaxPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights, crop_size):
         super(StackingArgmaxPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  
-                                                      paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
+                                                      paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights, crop_size=crop_size)
         self.nets = None
         self.channels = None
         
@@ -42,7 +42,7 @@ class StackingArgmaxPredictor(Predictor):
         super(StackingArgmaxPredictor, self).predict()
         
         dataset = HDF5Dataset(scale=self.scale, mode='test', db_info=json.load(open(self.paths.json_file_database)), 
-                              hdf5_db_dir=self.paths.hdf5_db, labels=self.labels, channels=self.channels)
+                              hdf5_db_dir=self.paths.hdf5_db, labels=self.labels, channels=self.channels, crop_size=self.crop_size)
         test_loader = DataLoader(dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
 
         with h5py.File(self.paths.hdf5_results, 'w') as db:
@@ -72,17 +72,17 @@ class StackingArgmaxPredictor(Predictor):
                     probs = final_array_prediction
                     #probs = F.softmax(probs, dim=1)
                     full_mask = probs.squeeze().cpu().detach().numpy()
-                    comb_img = self.combine_predictions(output_masks=full_mask)
+                    comb_img = self.combine_predictions(output_masks=full_mask, background=False)
                     
                     
                     # TESTING
-                    # real_img = batch['image']
+                    # real_img = batch['image_coarse']
                     # real_img = real_img.squeeze().cpu().numpy()
-                    # mask = batch['mask']
+                    # mask = batch['mask_gt']
                     # mask = mask.squeeze().cpu().numpy()
                     # raw_output = final_array_prediction.squeeze().cpu().numpy()
-                    # raw_output = self.combine_predictions(output_masks=raw_output)
-                    # visualize(image=real_img, mask=mask, additional_1=raw_output, additional_2=comb_img)
+                    # raw_output = self.combine_predictions(output_masks=raw_output, background=False)
+                    # visualize(image=real_img, mask=mask, additional_1=raw_output, additional_2=comb_img, file_name="temp.png")
 
                     db.create_dataset(id[0], data=comb_img) # add the calcualted image in the hdf5 results file
                     pbar.update(img.shape[0])   # update the pbar by number of imgs in batch

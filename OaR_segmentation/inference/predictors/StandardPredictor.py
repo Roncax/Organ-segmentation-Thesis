@@ -14,9 +14,9 @@ from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 
 class StandardPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights):
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights, crop_size):
         super(StandardPredictor, self).__init__(
-            scale=scale, mask_threshold=mask_threshold,  paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
+            scale=scale, mask_threshold=mask_threshold,  paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights, crop_size=crop_size)
         self.net = None
         self.channels = None
 
@@ -37,7 +37,7 @@ class StandardPredictor(Predictor):
 
         self.net.eval()
         dataset = HDF5Dataset(scale=self.scale, mode='test', db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
-                              labels=self.labels, channels=self.net.n_channels, multiclass_test=True)
+                              labels=self.labels, channels=self.net.n_channels, multiclass_test=True, crop_size=self.crop_size)
         test_loader = DataLoader(
             dataset=dataset, batch_size=1, shuffle=True, num_workers=8, pin_memory=True)
         with h5py.File(self.paths.hdf5_results, 'w') as db:

@@ -120,7 +120,7 @@ class ConvolutionTrainer(NetworkTrainer):
         if self.stacking:
             self.dataset = HDF5DatasetStacking(scale=self.img_scale, hdf5_db_dir=self.paths.hdf5_stacking,
                                     labels=self.labels, augmentation=self.augmentation, 
-                                    channels=self.network.n_channels, crop_size=self.crop_size)
+                                    channels=self.network.n_channels, crop_size=None)
         elif self.lastlayer_fusion:
             self.dataset = HDF5lastlayer(scale=self.img_scale, mode='train',
                                     db_info=json.load(open(self.paths.json_file_database)), hdf5_db_dir=self.paths.hdf5_db,
@@ -238,7 +238,8 @@ class ConvolutionTrainer(NetworkTrainer):
                 "optimizer": self.optimizer_type,
                 "epoch_results": {},
                 "retrain_models":retrain_models,
-                "train_with_reduced_db":self.train_with_reduced_db
+                "train_with_reduced_db":self.train_with_reduced_db,
+                "crop_size":self.crop_size
             }
         }
         

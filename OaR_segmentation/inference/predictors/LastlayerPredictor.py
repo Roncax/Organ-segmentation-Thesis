@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import torch.nn.functional as F
+from torch import nn
 
 from OaR_segmentation.network_architecture.net_factory import build_net
 from OaR_segmentation.inference.predictors.Predictor import Predictor
@@ -12,9 +13,9 @@ from OaR_segmentation.utilities.data_vis import visualize
 from OaR_segmentation.db_loaders.HDF5Dataset import HDF5Dataset
 
 class LastLayerPredictor(Predictor):
-    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights, in_features):
+    def __init__(self, scale, mask_threshold,  paths, labels, n_classes, logistic_regression_weights, in_features, crop_size):
         super(LastLayerPredictor, self).__init__(scale = scale, mask_threshold = mask_threshold,  
-                                                 paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights)
+                                                 paths=paths, labels=labels, n_classes=n_classes, logistic_regression_weights=logistic_regression_weights, crop_size=crop_size)
         self.nets = None
         self.meta_net = None
         self.channels = None
@@ -58,9 +59,12 @@ class LastLayerPredictor(Predictor):
         
         dataset = HDF5Dataset(scale=self.scale, mode='test', 
                               db_info=json.load(open(self.paths.json_file_database)), 
-                              hdf5_db_dir=self.paths.hdf5_db, labels=self.labels, channels=1)
+                              hdf5_db_dir=self.paths.hdf5_db, labels=self.labels, channels=1, crop_size=self.crop_size)
         test_loader = DataLoader(dataset=dataset, batch_size=1, 
                                  shuffle=True, num_workers=8, pin_memory=True)
+
+        loss = nn.CrossEntropyLoss()
+        l=0
 
         with h5py.File(self.paths.hdf5_results, 'w') as db:
             with tqdm(total=len(dataset), unit='img') as pbar:
@@ -82,6 +86,12 @@ class LastLayerPredictor(Predictor):
                     if self.logistic_regression_weights:
                         stacking_output = self.apply_logistic_weights(stacking_output)
                     
+                    
+                    #for CE in test
+                    mask = mask.squeeze(dim=1)
+                    mask = mask.to(dtype=torch.long, device='cuda:0')
+                    l += loss(stacking_output, mask)
+                    
                     probs = stacking_output    
                     probs = F.softmax(probs, dim=1)
                     probs = probs.squeeze().cpu().numpy()
@@ -96,4 +106,4 @@ class LastLayerPredictor(Predictor):
                     pbar.update(n=1)   # update the pbar by number of imgs in batch
 
 
-    
+        print(f"CE test loss: {l/len(test_loader)}")
