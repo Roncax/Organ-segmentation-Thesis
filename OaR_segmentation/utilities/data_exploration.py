@@ -162,16 +162,18 @@ def plt_augmentations(db, paths):
         slice = data['img'].squeeze().numpy()
         mask = data['mask'].squeeze().numpy()        
         
-        f, axarr = plt.subplots(2, 2, figsize=(15,15))
+        fig, axarr = plt.subplots(2,3, figsize=(30,30))
+        fig.tight_layout(h_pad=0.1, w_pad=0.1, pad=0.1)
         
         transform = A.Compose([
         #A.ElasticTransform(p=1, alpha=120 * 0.25, sigma=120 * 0.4, alpha_affine=120 * 0.4),
-        #A.GridDistortion(p=1),
+        A.GridDistortion(p=1),
         #A.RandomScale(scale_limit=0.05, p=0.5),
-        A.Rotate(limit=10, p=0.5),
+        #A.Rotate(limit=10, p=0.5),
         # A.ShiftScaleRotate(shift_limit=0, scale_limit=0.1, rotate_limit=10, p=0.5),
         # A.Blur(blur_limit=7, always_apply=False, p=0.5),
         #A.GaussNoise(var_limit=(0, 10), p=0.5),
+        A.Resize(height=320, width=320, always_apply=True)
         ])
 
         transformed = transform(image=slice, mask=mask)
@@ -180,19 +182,19 @@ def plt_augmentations(db, paths):
 
         axarr[0,0].imshow(slice, cmap='gray')
         axarr[0,0].axis('off')  # clear x-axis and y-axis
-        # axarr[0,1].imshow(slice, cmap='gray')
-        # axarr[0,1].imshow(mask,cmap='nipy_spectral', alpha=0.5 )
-        # axarr[0,1].axis('off')  # clear x-axis and y-axis
-        axarr[0,1].imshow(mask, cmap='nipy_spectral')
+        axarr[0,1].imshow(slice, cmap='gray')
+        axarr[0,1].imshow(mask,cmap='nipy_spectral', alpha=0.5 )
         axarr[0,1].axis('off')  # clear x-axis and y-axis
+        axarr[0,2].imshow(mask, cmap='nipy_spectral')
+        axarr[0,2].axis('off')  # clear x-axis and y-axis
         
         axarr[1,0].imshow(slice_t, cmap='gray')
         axarr[1,0].axis('off')  # clear x-axis and y-axis
-        # axarr[1,1].imshow(slice_t, cmap='gray')
-        # axarr[1,1].imshow(mask_t,cmap='nipy_spectral', alpha=0.5 )
-        # axarr[1,1].axis('off')  # clear x-axis and y-axis
-        axarr[1,1].imshow(mask_t, cmap='nipy_spectral')
+        axarr[1,1].imshow(slice_t, cmap='gray')
+        axarr[1,1].imshow(mask_t,cmap='nipy_spectral', alpha=0.5 )
         axarr[1,1].axis('off')  # clear x-axis and y-axis
+        axarr[1,2].imshow(mask_t, cmap='nipy_spectral')
+        axarr[1,2].axis('off')  # clear x-axis and y-axis
         
         plt.show()
             

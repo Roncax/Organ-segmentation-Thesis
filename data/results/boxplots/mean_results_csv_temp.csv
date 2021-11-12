@@ -1,0 +1,6 @@
+,Dice,Precision,Recall,Hausdorff Distance 95
+DeepLabV3,0.8512,0.8556,0.8536,2.4528
+ArgMax,0.8775,0.8581,0.9079,2.4454
+Feature Fusion,0.885,0.9117,0.8675,2.2071
+1x1 convolution,0.8843,0.9058,0.8727,2.1716
+Unet meta-model,0.8774,0.898,0.8698,2.2924

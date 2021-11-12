@@ -13,7 +13,7 @@ from copy import deepcopy
 if __name__ == "__main__":
     
     load_dir_list = {
-         "1": "10070/model_best.model",
+      "1": "10070/model_best.model",
         "2": "10072/model_best.model",
         "3": "10051/model_best.model",
         "4": "10052/model_best.model",
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "6": "10073/model_best.model",
         "coarse": "10106/model_best.model",
         "4_a": "10090/model_best.model",
-        "5_a": "10078/model_best.model"
+        "5_a": "10053/model_best.model"
     }
 
     models = {
@@ -37,15 +37,15 @@ if __name__ == "__main__":
     }
 
     labels = {
-       "1": "RightLung",
+      "1": "RightLung",
         "2": "LeftLung",
         "3": "Heart",
         "4": "Trachea",
         "5": "Esophagus",
         "6": "SpinalCord",
         #"coarse":"coarse",
-        #"4_a": "Trachea",
-        #"5_a": "Esophagus"
+        "4_a": "Trachea",
+         "5_a": "Esophagus"
     }
     
     class_weights = {
@@ -76,15 +76,15 @@ if __name__ == "__main__":
     epochs = 500
     validation_size = 0.2
     multi_loss_weights=[1, 1] # [ce, dice]
-    channels = 6 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
+    channels = 8 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
     finder_lr_iterations = 2000
     find_optimal_lr = False
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
     telegram = False
-    mod_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
+    mod_type = "Onex1StackConv_Unet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
     crop_size = (320,320)
-    train_with_reduced_db=True
+    train_with_reduced_db=False
 
 
     if mod_type == "Onex1StackConv_Unet" or mod_type == "LogReg_thresholding":

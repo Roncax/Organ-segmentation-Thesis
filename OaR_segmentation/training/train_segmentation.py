@@ -10,11 +10,11 @@ from copy import deepcopy
 def run_training():
     
     labels = {
-        # "1": "RightLung",
+        "1": "RightLung",
         # "2": "LeftLung",
         # "3": "Heart",
         # "4": "Trachea",
-        "5": "Esophagus",
+        #"5": "Esophagus",
         # "6": "SpinalCord"
         }
     
@@ -40,13 +40,13 @@ def run_training():
                 }
 
     class_weights = {
-        "Bg": 0,
+        "Bg": 1,
         "LeftLung": 1,
-        "RightLung": 0.8,
-        "Heart": 1.8,
-        "Esophagus": 4.7,
-        "Trachea": 4.3,
-        "SpinalCord": 4
+        "RightLung": 1,
+        "Heart": 1,
+        "Esophagus": 1,
+        "Trachea": 1,
+        "SpinalCord": 1
     }
 
     model = "unet"   #seresunet, unet, segnet, deeplabv3 (only resnet34 encoder)
@@ -68,7 +68,7 @@ def run_training():
     n_classes = 7   # 1 if binary, n+1 if n organ
     old_classes = -1  # args.old_classes - for transfer learning purpose
     paths = Paths(db=db_name, platform=platform)
-    find_optimal_lr = False
+    find_optimal_lr = True
     finder_lr_iterations = 2000
     optimizer = "adam" #adam, rmsprop
     telegram = False
@@ -117,6 +117,7 @@ def run_training():
         trainer_temp.initialize()
         _, _, optimal_lr = trainer_temp.find_lr(num_iters=finder_lr_iterations, paths=paths)
         trainer.lr = optimal_lr
+        print(optimal_lr)
 
     trainer.initialize()
     trainer.setup_info_dict(dropout=dropout, feature_extraction=feature_extraction, pretrained_model=pretrained_model, fine_tuning=fine_tuning)

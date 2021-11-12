@@ -11,7 +11,7 @@ from OaR_segmentation.utilities.paths import Paths
 from OaR_segmentation.utilities.populate_csv import populate_csv
 
 
-if __name__ == "__main__":
+def prediction_plot():
     
     load_models_dir = {
         "1": "10070/model_best.model",
@@ -79,25 +79,9 @@ if __name__ == "__main__":
     paths = Paths(db=db_name, platform=platform)
     dict_inference_results = json.load(open(paths.json_file_inference_results))
     dict_db_info = json.load(open(paths.json_file_database))
-    experiment_num = json.load(open(paths.json_experiments_settings))["inference_experiment"] + 1
+    experiment_num = -1
     paths.dir_logreg = paths.dir_logreg + f'/{logistic_regression_dir}'
 
-    # used for results storage purpose
-    dict_test_info = {
-        "db": db_name,
-        "fusion_model": load_dir_metamodel,
-        "used_models": load_models_dir,
-        "scale": scale,
-        "channels":channels,
-        "in_features":in_features,
-        "mask_threshold": mask_threshold,
-        "segmentation_models": models_type_list,
-        "stacking_mode": stacking_mode,
-        "labels": labels,
-        "logistic_regression_weights": logistic_regression_dir if logistic_regression_weights else 'NA',
-        "convolutional_meta_type": convolutional_meta_type if stacking_mode == 'convolutional' else 'NA',
-        "crop_size":crop_size
-    }
 
     ######## BEGIN INFERENCE ########
     # standard multiclass
@@ -122,9 +106,5 @@ if __name__ == "__main__":
         predictor.initialize(load_models_dir=load_models_dir, channels=1, load_dir_metamodel=load_dir_metamodel, models_type_list=models_type_list)
         
     predictor.predict()
-    predictor.compute_save_metrics(metrics_list=metrics_list, db_name=db_name, colormap=dict_db_info["colormap"], 
-                                   experiment_num=experiment_num, dict_test_info=dict_test_info,
-                                   labels=predict_labels, gif_viz=True)
-    
-    populate_csv(str(experiment_num), predict_labels, metrics_list)
+
         

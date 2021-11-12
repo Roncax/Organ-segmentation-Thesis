@@ -32,7 +32,7 @@ if __name__ == '__main__':
         "6": "10073/model_best.model",
         "coarse": "10106/model_best.model",
         "4_a": "10090/model_best.model",
-        "5_a": "10078/model_best.model"
+        "5_a": "10053/model_best.model"
     }
 
     models_type_list = {
@@ -51,8 +51,8 @@ if __name__ == '__main__':
         "1": False,
         "2": False,
         "3": False,
-        "4": False,
-        "5": False,
+        "4": True,
+        "5": True,
         "6": False,
         "coarse": False,
         "4_a": False,
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     finder_lr_iterations = 2000
     optimizer = "adam"  # adam, rmsprop
     telegram = False
-    train_with_reduced_db=False
+    train_with_reduced_db=True
     in_features = 64*4 + 256*2# 64 per ogni unet/resnet, 256 per ogni deeplab
     crop_size = (320,320)
     
