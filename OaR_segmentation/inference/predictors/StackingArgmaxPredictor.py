@@ -73,7 +73,7 @@ class StackingArgmaxPredictor(Predictor):
                     #probs = F.softmax(probs, dim=1)
                     full_mask = probs.squeeze().cpu().detach().numpy()
                     comb_img = self.combine_predictions(output_masks=full_mask, background=False)
-                    
+
                     
                     # TESTING
                     # real_img = batch['image_coarse']

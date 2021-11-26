@@ -46,8 +46,8 @@ if __name__ == "__main__":
         "5": "Esophagus",
         "6": "SpinalCord",
         #"coarse":"coarse",
-        "4_a": "Trachea",
-        "5_a": "Esophagus"
+        #"4_a": "Trachea",
+        #"5_a": "Esophagus"
         }
     
     predict_labels = {
@@ -61,17 +61,17 @@ if __name__ == "__main__":
     
     db_name = "StructSeg2019_Task3_Thoracic_OAR"
     platform = "local"  # local, colab, polimi
-    load_dir_metamodel = "1558/model_best.model"
+    load_dir_metamodel = "1549/model_best.model"
     n_classes = 7   # 1 if binary, n+1 if n organ
     scale = 1
     mask_threshold = 0.5
     metrics_list =['Dice', 'Precision', 'Recall' ,  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
     stacking_mode = "convolutional" #none, argmax, convolutional, lastlayer_fusion
-    convolutional_meta_type = "stack_UNet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
+    convolutional_meta_type = "Onex1StackConv_Unet" # Onex1StackConv_Unet, stack_UNet, LogReg_thresholding
     logistic_regression_weights = False
     logistic_regression_dir = '1/best_model.model'
     in_features = 64*5 + 256*3  # 64 per ogni unet/resnet, 256 per ogni deeplab
-    channels = 8 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
+    channels = 6 + 7*0 # 1 per ogni rete binaria e 7 per multibinaria
     crop_size = (320,320)
 
     

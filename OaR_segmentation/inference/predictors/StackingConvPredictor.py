@@ -37,19 +37,26 @@ class StackingConvPredictor(Predictor):
         net =  build_net(model=meta_net_model, n_classes=n_classes, channels=self.channels, load_inference=True,load_dir=self.paths.dir_pretrained_model)
         
         # Show the tensor weights of the 1x1 convolution
-        # d = {}
-        # col_temp=[]
-        # for i, c in enumerate(self.nets.keys()):
-        #     if c == "coarse":
-        #         col_temp.extend([f"c_{x}" for x in range(7)])
-        #     else:
-        #         col_temp.append(c)
-                
-        #     d[i]=np.append(net.outc.conv.weight[i].detach().cpu().numpy().squeeze(),net.outc.conv.bias[i].item())
+        d = {}
+        col_temp=[]
+        for i, c in enumerate(self.nets.keys()):
+            if c == "coarse":
+                col_temp.extend([f"c_{x}" for x in range(7)])
+            else:
+                col_temp.append(c)
+        
+        for i in range(n_classes):
+            s=np.round(net.outc.conv.weight[i].detach().cpu().numpy().squeeze(),2)
+            b = net.outc.conv.bias[i].item()
+            s_t=[]
+            for j, x in enumerate(s):
+                s_t.append(str(x))
+            d[i]=np.append(s_t,np.round(b,2))
             
-        # col_temp.append('bias')
-        # df = pd.DataFrame.from_dict(d, orient='index', columns=col_temp)
-        # print(df)
+        col_temp.append('bias')
+        df = pd.DataFrame.from_dict(d, orient='index', columns=col_temp)
+        df.to_csv("aaa.csv")
+        print(df)
         
         return net
         
@@ -122,7 +129,6 @@ class StackingConvPredictor(Predictor):
                     probs = probs.squeeze().cpu().numpy()
 
                     probs = self.combine_predictions(output_masks=probs)
-                    
                     # probs = stacking_output 
                     
                     # probs = torch.squeeze(probs)

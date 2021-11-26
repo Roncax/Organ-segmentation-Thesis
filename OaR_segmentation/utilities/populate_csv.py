@@ -32,8 +32,8 @@ def populate_csv(experiment, labels, metrics_list):
 
 
 if __name__ == '__main__':
-    experiment = "55"
-    metrics_list =['Dice', 'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
+    experiment = "51"
+    metrics_list =['Dice',] #'Precision', 'Recall',  'Avg. Surface Distance', 'Hausdorff Distance 95'] 
 
     labels = {
         "1": "RightLung",

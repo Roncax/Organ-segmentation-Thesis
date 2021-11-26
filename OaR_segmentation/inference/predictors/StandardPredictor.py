@@ -73,7 +73,6 @@ class StandardPredictor(Predictor):
                     # mask = batch['mask']
                     # mask = mask.squeeze().cpu().numpy()
                     # visualize(image=real_img, mask=mask, additional_1=res, additional_2=res)
-
                     db.create_dataset(id[0], data=res)
                     # update the pbar by number of imgs in batch
                     pbar.update(imgs.shape[0])
